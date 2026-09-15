@@ -4,12 +4,13 @@
    - Sirve desde caché al instante y actualiza en segundo plano (stale-while-revalidate).
    - Nunca deja que un fallo de red bloquee el arranque. */
 
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 const CACHE = 'cbt-posesiones-' + VERSION;
 
 const ASSETS = [
   './',
   './index.html',
+  './manual.html',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -65,10 +66,15 @@ self.addEventListener('fetch', (event) => {
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
-      const cached = (await cache.match('./index.html')) || (await cache.match('./'));
+      // Si la navegación apunta a un documento que ya tenemos (el manual, por
+      // ejemplo), se sirve ese. El index solo es el recurso de reserva: sin este
+      // orden, cualquier navegación devolvería la app y el manual no se vería.
+      const cached = (await cache.match(req, { ignoreSearch: true }))
+        || (await cache.match('./index.html'))
+        || (await cache.match('./'));
       if (cached && offline) return cached;
       const fresh = fetch(req).then((res) => {
-        if (res && res.ok) cache.put('./index.html', res.clone());
+        if (res && res.ok) cache.put(req, res.clone());
         return res;
       }).catch(() => null);
       return cached || (await fresh) || new Response(

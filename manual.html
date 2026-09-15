@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Manual · Posesiones CBT</title>
+<!-- Sin tipografías ni recursos externos: tiene que abrirse sin cobertura,
+     y cualquier petición fallida hace que iOS saque su aviso de conexión. -->
+<style>
+  :root{
+    --bg:#15120e;
+    --surface:#1e1912;
+    --surface2:#241d15;
+    --line:#3a2f22;
+    --line-2:#4a3d2d;
+    --ink:#f3ece0;
+    --ink-2:#d6c9b6;
+    --muted:#a3937c;
+    --cbt:#e8792b;
+    --cbt-dim:#3a2311;
+    --rival:#6fa3c4;
+    --good:#6fbe86;
+    --good-dim:#182a1e;
+    --bad:#e0796a;
+    --bad-dim:#2e1a15;
+    --gold:#dfb23e;
+    --gold-dim:#2e2512;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto;}}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--body);font-size:16px;line-height:1.6;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding-inline:18px;padding-block:0 56px;}
+
+  header.top{padding-block:26px 18px;}
+  .eyebrow{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--cbt);margin:0 0 10px;}
+  h1{font-size:30px;font-weight:800;line-height:1.05;letter-spacing:-.02em;margin:0 0 12px;text-wrap:balance;}
+  .standfirst{font-size:16px;color:var(--ink-2);margin:0 0 18px;}
+  .callout{background:var(--cbt-dim);border-left:3px solid var(--cbt);
+    padding:13px 15px;border-radius:0 8px 8px 0;font-size:15px;}
+
+  nav.jump{position:sticky;top:0;z-index:5;background:var(--bg);
+    border-bottom:1px solid var(--line);margin-inline:-18px;padding:9px 18px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  nav.jump ul{display:flex;gap:6px;list-style:none;margin:0;padding:0;width:max-content;}
+  nav.jump a{display:block;font-family:var(--mono);font-size:11px;font-weight:500;
+    letter-spacing:.05em;text-transform:uppercase;text-decoration:none;color:var(--muted);
+    border:1px solid var(--line-2);border-radius:20px;padding:6px 11px;white-space:nowrap;}
+  nav.jump a.active{color:var(--cbt);border-color:var(--cbt);background:var(--cbt-dim);}
+  a:focus-visible{outline:2px solid var(--cbt);outline-offset:2px;}
+
+  section{padding-block:34px 0;scroll-margin-top:54px;}
+  .sec-num{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.14em;
+    color:var(--muted);display:block;margin-bottom:5px;}
+  h2{font-size:24px;font-weight:800;line-height:1.1;letter-spacing:-.015em;margin:0 0 5px;text-wrap:balance;}
+  .sec-lede{color:var(--muted);font-size:15px;margin:0 0 20px;}
+  h3{font-size:17px;font-weight:700;margin:0 0 7px;text-wrap:balance;}
+  p{margin:0 0 13px;}
+  small.note{display:block;font-size:13.5px;color:var(--muted);margin-top:7px;line-height:1.55;}
+
+  ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:18px;counter-reset:s;}
+  ol.steps>li{display:grid;grid-template-columns:28px 1fr;gap:12px;counter-increment:s;}
+  ol.steps>li::before{content:counter(s);font-size:14px;font-weight:800;color:var(--cbt);
+    background:var(--cbt-dim);width:28px;height:28px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;}
+  ol.steps p{margin:0 0 7px;}
+  ol.steps p:last-child{margin-bottom:0;}
+
+  ol.chain{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 4px;}
+  ol.chain li{display:flex;align-items:center;gap:4px;}
+  ol.chain li+li::before{content:"\2192";font-family:var(--mono);font-size:12px;color:var(--muted);}
+  /* Dentro de texto corrido la etiqueta debe caber en la línea; si no, se
+     solapa con el renglón siguiente. En las cadenas de botones, que van en un
+     contenedor flex propio, puede permitirse más aire. */
+  .k{font-family:var(--mono);font-size:12px;font-weight:500;line-height:1.4;
+    display:inline-block;vertical-align:baseline;
+    border:1px solid var(--line-2);border-radius:5px;padding:0 5px;
+    background:var(--surface2);color:var(--ink);white-space:nowrap;}
+  ol.chain .k{line-height:1.25;border-radius:6px;padding:4px 7px;}
+  .k-cbt{background:var(--cbt-dim);border-color:var(--cbt);color:var(--cbt);font-weight:600;}
+  .k-rival{background:#172b37;border-color:var(--rival);color:var(--rival);font-weight:600;}
+  .k-make{background:var(--good-dim);border-color:var(--good);color:var(--good);}
+  .k-miss{background:var(--bad-dim);border-color:var(--bad);color:var(--bad);}
+  .k-warn{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+  .k-ghost{background:transparent;border-style:dashed;color:var(--muted);}
+
+  .recipe{padding-block:17px;border-top:1px solid var(--line);}
+  .recipe:first-child{border-top:none;padding-top:0;}
+  .recipe-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px;}
+  .recipe-head h3{margin:0;}
+  .outcome{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.07em;
+    text-transform:uppercase;white-space:nowrap;padding:3px 8px;border-radius:20px;flex:none;}
+  .out-close{background:var(--surface2);color:var(--muted);border:1px solid var(--line-2);}
+  .out-open{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold);}
+
+  .fork{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  @media (max-width:440px){.fork{grid-template-columns:1fr;}}
+  .fork-col{border:1px solid var(--line);border-radius:10px;padding:13px;background:var(--surface);}
+  .fork-col h4{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.09em;
+    text-transform:uppercase;margin:0 0 9px;}
+  .fork-col.closes h4{color:var(--muted);}
+  .fork-col.opens h4{color:var(--gold);}
+  .fork-col ul{margin:0;padding-left:16px;font-size:14.5px;line-height:1.55;color:var(--ink-2);}
+  .fork-col li{margin-bottom:4px;}
+  .fork-col li:last-child{margin-bottom:0;}
+
+  .scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:300px;}
+  th{text-align:left;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--muted);padding:0 12px 8px 0;border-bottom:1px solid var(--line-2);}
+  td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5;}
+  td:last-child,th:last-child{padding-right:0;}
+  td.metric{font-weight:700;white-space:nowrap;}
+  .mono{font-family:var(--mono);font-size:12.5px;}
+
+  ul.check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+  /* El marcador va posicionado, no en grid: con grid, cualquier etiqueta .k
+     dentro del texto se convertiría en celda y se solaparía con el renglón. */
+  ul.check li{position:relative;padding-left:26px;font-size:15px;}
+  ul.check li::before{content:"";position:absolute;left:0;top:6px;
+    width:13px;height:13px;border-radius:3px;border:1.5px solid var(--cbt);}
+
+  .warn{background:var(--gold-dim);border:1px solid var(--gold);border-radius:10px;
+    padding:13px 15px;font-size:14.5px;margin-bottom:13px;}
+  .warn strong{color:var(--gold);}
+
+  dl.defs{margin:0;display:flex;flex-direction:column;gap:15px;}
+  dl.defs>div{border-left:2px solid var(--line-2);padding-left:13px;}
+  dt{font-weight:700;font-size:16px;margin-bottom:3px;}
+  dd{margin:0;font-size:14.5px;color:var(--ink-2);}
+  dd .formula{display:block;font-family:var(--mono);font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.5;}
+
+  footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);}
+  footer p{margin:0 0 4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <p class="eyebrow">Val Brokers CB Tomelloso · Tercera FEB</p>
+    <h1>Manual de uso</h1>
+    <p class="standfirst">Cómo registrar un partido con la app de posesiones. Esta copia está guardada dentro de la app: se abre sin cobertura.</p>
+    <div class="callout"><strong>La regla que lo resume todo:</strong> abre siempre la app desde el icono de la pantalla de inicio. La misma app abierta en Safari puede guardar los datos en otro sitio.</div>
+  </header>
+
+  <nav class="jump" aria-label="Secciones">
+    <ul>
+      <li><a href="#antes">Antes del partido</a></li>
+      <li><a href="#posesion">La posesión</a></li>
+      <li><a href="#recetario">Recetario</a></li>
+      <li><a href="#admin">Faltas y TM</a></li>
+      <li><a href="#metricas">Panel</a></li>
+      <li><a href="#final">Al terminar</a></li>
+      <li><a href="#problemas">Si algo falla</a></li>
+    </ul>
+  </nav>
+
+  <section id="antes">
+    <span class="sec-num">01</span>
+    <h2>Antes del partido</h2>
+    <p class="sec-lede">Dos minutos en el banquillo antes del salto inicial.</p>
+    <ul class="check">
+      <li>Abre la app desde el icono, mejor con wifi por si hay actualización pendiente.</li>
+      <li>Arriba a la derecha debe poner <span class="k k-warn">Pantalla ON</span>. Si pone «Pantalla: auto», dale un toque para que el móvil no se bloquee solo.</li>
+      <li>Comprueba el punto verde de la izquierda y la hora del último guardado. Si se pone rojo, el teléfono no está guardando: exporta cuanto antes.</li>
+      <li>Escribe el nombre del rival y confirma la fecha. Las dos cosas viajan a todos los CSV.</li>
+      <li>Si quedaba un partido anterior sin archivar, ve a <em>Partidos guardados</em> y pulsa <span class="k">Guardar este partido y empezar uno nuevo</span>.</li>
+      <li>Selecciona el cuarto. Es manual: hay que cambiarlo al empezar cada cuarto.</li>
+      <li>Lleva batería externa. La pantalla encendida dos horas gasta mucho.</li>
+    </ul>
+  </section>
+
+  <section id="posesion">
+    <span class="sec-num">02</span>
+    <h2>Cómo se registra una posesión</h2>
+    <p class="sec-lede">La app no registra eventos sueltos: agrupa toda la secuencia dentro de la posesión a la que pertenece. Eso es lo que permite calcular los puntos de segunda oportunidad y los puntos tras pérdida de forma exacta, y no aproximada como en el acta oficial.</p>
+
+    <ol class="steps">
+      <li><div><h3>Abres la posesión</h3><p>Eliges quién ataca: <span class="k k-cbt">CBT ataca</span> o <span class="k k-rival">RIVAL ataca</span>. Aparece una banda de color con el equipo, y ahí se queda hasta que la posesión se cierre.</p></div></li>
+      <li><div><h3>Registras lo que pasa</h3><p>Tiro de 2 o de 3, anotado o fallado; pérdida; falta recibida; o cierre manual si no encaja en nada de lo anterior.</p></div></li>
+      <li><div><h3>Resuelves lo que queda pendiente</h3><p>El dorsal de quien tira o pierde el balón, si hubo falta con la canasta, los tiros libres uno a uno, y quién coge el rebote.</p>
+        <small class="note">En cualquier teclado de dorsal puedes pulsar <span class="k k-ghost">Sin identificar</span> si no lo has visto. La acción se registra igual; solo pierdes el desglose por jugador.</small></div></li>
+      <li><div><h3>La posesión se cierra sola, o sigue</h3><p>No hay botón de «terminar»: el propio resultado decide. Si sigue abierta, la banda te recuerda cuántos puntos lleva ya anotados.</p></div></li>
+    </ol>
+
+    <h3 style="margin-top:28px;">Qué cierra la posesión y qué no</h3>
+    <div class="fork">
+      <div class="fork-col closes"><h4>Se cierra</h4>
+        <ul><li>Canasta sin falta</li><li>Último tiro libre anotado</li><li>Pérdida</li><li>Rebote defensivo del rival</li><li>Cierre manual</li></ul></div>
+      <div class="fork-col opens"><h4>Sigue abierta</h4>
+        <ul><li>Rebote ofensivo, individual o de equipo</li><li>Falta sin tiros libres</li><li>Tiros libres a medias</li></ul></div>
+    </div>
+    <small class="note">Los puntos ya anotados dentro de una posesión que continúa no se pierden: se acumulan y se suman al cerrarla. Por eso un «y uno» con el tiro libre fallado y rebote ofensivo puede acabar valiendo cinco puntos en una sola posesión.</small>
+
+    <h3 style="margin-top:28px;">Las tres clases de rebote</h3>
+    <dl class="defs">
+      <div><dt>Ofensivo individual</dt><dd>Un jugador concreto captura el balón. Pide dorsal, tipo de tablero y cuántos jugadores había en la lucha. Es el que alimenta el crash index por jugador.</dd></div>
+      <div><dt>Ofensivo de equipo</dt><dd>Balón disputado que nadie captura limpiamente y acaba saliendo de banda a nuestro favor. No pide dorsal y se contabiliza aparte, para no ensuciar el dato individual con rebotes que nadie cogió.</dd></div>
+      <div><dt>Defensivo</dt><dd>Lo coge el equipo que defiende. Cierra la posesión y da comienzo a la siguiente.</dd></div>
+    </dl>
+    <small class="note">El tablero <span class="k">Corto</span> es el rechace que cae bajo el aro; <span class="k">Largo</span> el que sale lejos. Los jugadores en la lucha son los que disputaban ese balón, de los dos equipos.</small>
+  </section>
+
+  <section id="recetario">
+    <span class="sec-num">03</span>
+    <h2>Recetario</h2>
+    <p class="sec-lede">La sección que consultar en pleno partido. Cada situación, con la secuencia exacta de botones tal y como aparecen en pantalla.</p>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Canasta de 2 normal</h3><span class="outcome out-close">Cierra</span></div>
+      <ol class="chain"><li><span class="k k-cbt">CBT ataca</span></li><li><span class="k k-make">T2 ✓</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li><li><span class="k">Sin falta</span></li></ol>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Triple</h3><span class="outcome out-close">Cierra</span></div>
+      <ol class="chain"><li><span class="k k-cbt">CBT ataca</span></li><li><span class="k k-make">T3 ✓</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li><li><span class="k">Sin falta</span></li></ol>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Y uno, con el tiro libre anotado</h3><span class="outcome out-close">Cierra</span></div>
+      <ol class="chain"><li><span class="k k-make">T2 ✓</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li><li><span class="k k-warn">+1 tiro libre</span></li><li><span class="k k-make">Tiro libre ANOTADO</span></li></ol>
+      <small class="note">Tres puntos en la posesión. Los dos de la canasta se apuntan en cuanto pulsas <span class="k k-warn">+1 tiro libre</span>, así que ya no dependen de lo que pase después.</small>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Y uno, tiro libre fallado y cogemos el rebote</h3><span class="outcome out-open">Sigue</span></div>
+      <ol class="chain"><li><span class="k k-make">T2 ✓</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li><li><span class="k k-warn">+1 tiro libre</span></li><li><span class="k k-miss">Tiro libre FALLADO</span></li><li><span class="k k-make">Rebote ofensivo individual</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li><li><span class="k">Corto</span></li><li><span class="k">2</span></li></ol>
+      <small class="note">La banda pasa a decir «2 pts ya anotados» y la posesión continúa. Si después metemos un triple, esa posesión vale 5.</small>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Falta con dos tiros libres, mete los dos</h3><span class="outcome out-close">Cierra</span></div>
+      <ol class="chain"><li><span class="k k-warn">Falta recibida</span></li><li><span class="k k-warn">2</span></li><li><span class="k k-make">ANOTADO</span></li><li><span class="k k-make">ANOTADO</span></li></ol>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Dos tiros libres, mete el primero y falla el segundo</h3><span class="outcome out-close">Cierra</span></div>
+      <ol class="chain"><li><span class="k k-warn">Falta recibida</span></li><li><span class="k k-warn">2</span></li><li><span class="k k-make">ANOTADO</span></li><li><span class="k k-miss">FALLADO</span></li><li><span class="k k-miss">Rebote defensivo</span></li></ol>
+      <small class="note">Un punto para la posesión. Si el rebote lo cogemos nosotros, la posesión sigue abierta con ese punto guardado.</small>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Falta que no da tiros libres</h3><span class="outcome out-open">Sigue</span></div>
+      <ol class="chain"><li><span class="k k-warn">Falta recibida</span></li><li><span class="k">Falta sin tiros libres</span></li></ol>
+      <small class="note">Personal en ataque sin bonus, o antideportiva sin tiros. Queda registrada como falta cometida del rival y la posesión continúa igual.</small>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Tiro fallado y segunda oportunidad</h3><span class="outcome out-open">Sigue</span></div>
+      <ol class="chain"><li><span class="k k-miss">T2 ✗</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li><li><span class="k k-make">Rebote ofensivo individual</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li><li><span class="k">Largo</span></li><li><span class="k">3</span></li></ol>
+      <small class="note">A partir de aquí, todo lo que anote esta posesión cuenta como puntos de segunda oportunidad.</small>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Rebote disputado que sale de banda para nosotros</h3><span class="outcome out-open">Sigue</span></div>
+      <ol class="chain"><li><span class="k k-miss">T3 ✗</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li><li><span class="k k-warn">Rebote ofensivo de EQUIPO</span></li><li><span class="k">Corto</span></li><li><span class="k">4+</span></li></ol>
+      <small class="note">Sin dorsal, porque nadie lo capturó. Cuenta para el ORB% del equipo pero no para el crash index de ningún jugador.</small>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Tiro fallado y rebote del rival</h3><span class="outcome out-close">Cierra</span></div>
+      <ol class="chain"><li><span class="k k-miss">T2 ✗</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li><li><span class="k k-miss">Rebote defensivo</span></li></ol>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Pérdida</h3><span class="outcome out-close">Cierra</span></div>
+      <ol class="chain"><li><span class="k">Pérdida</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li></ol>
+      <small class="note">La app marca automáticamente la siguiente posesión del otro equipo como «tras pérdida». Solo funciona si abres esa posesión a continuación, así que no te saltes ninguna.</small>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Violación de 24, pasos, dobles o fuera de banda</h3><span class="outcome out-close">Cierra</span></div>
+      <ol class="chain"><li><span class="k">Pérdida</span></li><li><span class="k">dorsal</span> o <span class="k k-ghost">Sin identificar</span></li></ol>
+      <small class="note">Son pérdidas a todos los efectos y deben contar en el TOV%. Reserva el cierre manual para lo que de verdad no es pérdida de nadie.</small>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Se acaba el cuarto con la posesión viva</h3><span class="outcome out-close">Cierra</span></div>
+      <ol class="chain"><li><span class="k k-ghost">Cerrar posesión (violación / fin de cuarto / otros)</span></li></ol>
+      <small class="note">Cierra sin pérdida y sin tiro, conservando los puntos acumulados. Después cambia el cuarto arriba antes de abrir la siguiente posesión.</small>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Tapón que sale fuera y saca el ataque</h3><span class="outcome out-open">Sigue</span></div>
+      <ol class="chain"><li><span class="k k-miss">T2 ✗</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li><li><span class="k k-warn">Rebote ofensivo de EQUIPO</span></li><li><span class="k">Corto</span></li><li><span class="k">2</span></li></ol>
+      <small class="note">Criterio: el tiro se intentó y el balón sigue siendo nuestro sin que nadie lo capturara. Mantén el mismo criterio todo el partido, que es lo que hace comparables los datos entre jornadas.</small>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Me he equivocado al pulsar</h3><span class="outcome out-open">—</span></div>
+      <ol class="chain"><li><span class="k k-warn">Deshacer</span></li></ol>
+      <small class="note">Abajo a la derecha. Deshace la última acción sea cual sea, incluidas faltas personales y tiempos muertos, y deja la posesión en el punto exacto en el que estaba. Púlsalo varias veces para ir hacia atrás.</small>
+    </div>
+  </section>
+
+  <section id="admin">
+    <span class="sec-num">04</span>
+    <h2>Faltas personales y tiempos muertos</h2>
+    <p class="sec-lede">Van en <em>Datos administrativos</em>, aparte del registro de posesiones, porque responden a otra pregunta: quién está cargado y cuánto queda por gastar.</p>
+    <h3>Faltas personales</h3>
+    <p>Pulsa <span class="k">Falta personal CBT</span> o la del rival, teclea el dorsal y confirma con <span class="k">OK</span>. El resumen se agrupa por jugador, y <strong>al llegar a cinco aparece un aviso rojo</strong> junto al dorsal.</p>
+    <small class="note">Esto es independiente de la <span class="k k-warn">Falta recibida</span> del registro de posesiones: aquella es la falta que nos hacen dentro de una posesión concreta; esta es el recuento de personales de cada jugador, que es lo que necesitas para avisar al banquillo.</small>
+    <h3 style="margin-top:24px;">Tiempos muertos</h3>
+    <p>Un toque en <span class="k k-warn">Tiempo muerto CBT</span> o en el del rival. Debajo tienes el recuento de los dos equipos. Los dos registros tienen su propio botón de deshacer dentro del panel, y su propio CSV.</p>
+  </section>
+
+  <section id="metricas">
+    <span class="sec-num">05</span>
+    <h2>Leer el panel de decisión</h2>
+    <p class="sec-lede">Todo se recalcula en cada acción. Los four factors están como referencia conocida, pero lo que de verdad aporta esta app son las dos últimas: son medidas exactas por posesión, no estimaciones.</p>
+    <dl class="defs">
+      <div><dt>eFG%</dt><dd>Acierto en tiros de campo dando al triple el 50 % extra que vale.<span class="formula">(TC anotados + 0,5 × T3 anotados) ÷ TC intentados</span></dd></div>
+      <div><dt>TOV%</dt><dd>Pérdidas por posesión propia. Aquí es un dato real, contado posesión a posesión, no la fórmula estimada del acta.<span class="formula">pérdidas ÷ posesiones del equipo</span></dd></div>
+      <div><dt>ORB%</dt><dd>Qué parte de nuestros rechaces capturamos. Incluye los rebotes ofensivos de equipo.<span class="formula">ROf propios ÷ (ROf propios + RDef del rival)</span></dd></div>
+      <div><dt>FT Rate</dt><dd>Cuánto pisamos la línea en relación a lo que tiramos de campo.<span class="formula">TL intentados ÷ TC intentados</span></dd></div>
+      <div><dt>Puntos de 2ª oportunidad</dt><dd>Suma de los puntos de <em>todas</em> las posesiones que tuvieron al menos un rebote ofensivo. Más fiel que el dato oficial, que solo cuenta lo anotado inmediatamente después del rebote.</dd></div>
+      <div><dt>Puntos tras pérdida</dt><dd>Puntos de la posesión inmediatamente siguiente a una pérdida del rival. El número entre paréntesis es cuántas veces ha pasado, que es lo que te dice si el dato tiene peso o es anecdótico.</dd></div>
+    </dl>
+
+    <h3 style="margin-top:26px;">Qué mirar en un tiempo muerto</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Si ves</th><th>La conversación es</th></tr></thead>
+        <tbody>
+          <tr><td class="metric">TOV% alto</td><td>El problema no es el acierto, es que no llegamos a tirar. Simplificar el primer pase.</td></tr>
+          <tr><td class="metric">ORB% bajo</td><td>Estamos cediendo los rechaces. Si los de equipo son muchos, llegamos a disputarlos pero no a cogerlos.</td></tr>
+          <tr><td class="metric">eFG% bajo con FT Rate bajo</td><td>Tiro exterior sin penetración. No generamos ventaja, solo lanzamos.</td></tr>
+          <tr><td class="metric">Puntos en contra tras pérdida</td><td>El coste real de las pérdidas no es el balón, es el contraataque. Es el argumento para pedir el tiempo muerto.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <small class="note">Con pocas posesiones registradas los porcentajes bailan mucho. En el primer cuarto fíjate en los números absolutos; los porcentajes empiezan a significar algo a partir del descanso.</small>
+  </section>
+
+  <section id="final">
+    <span class="sec-num">06</span>
+    <h2>Al terminar el partido</h2>
+    <p class="sec-lede">Primero exportar, después archivar. En ese orden.</p>
+    <ol class="steps">
+      <li><div><h3>Exporta los CSV</h3><p><span class="k">CSV posesiones</span> y <span class="k">CSV eventos</span> están abajo; el de faltas y tiempos muertos, dentro de <em>Datos administrativos</em>.</p>
+        <small class="note">Se abre la hoja de compartir de iOS: mándatelos a Archivos, a Mail o por AirDrop al ordenador.</small></div></li>
+      <li><div><h3>Guarda una copia completa</h3><p>En <em>Copia de seguridad y datos</em>, <span class="k">Exportar copia de seguridad (JSON)</span>. Lleva el partido en curso y todos los archivados, y se puede volver a importar.</p></div></li>
+      <li><div><h3>Archiva y prepara el siguiente</h3><p>En <em>Partidos guardados</em>, <span class="k">Guardar este partido y empezar uno nuevo</span>. Queda guardado con marcador, fecha y rival, y sigue exportable desde esa lista.</p></div></li>
+    </ol>
+
+    <h3 style="margin-top:28px;">Qué lleva cada CSV</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Archivo</th><th>Columnas</th></tr></thead>
+        <tbody>
+          <tr><td class="metric">Posesiones</td><td class="mono">fecha; id; cuarto; equipo; resultado; puntos; 2a_oportunidad; tras_perdida</td></tr>
+          <tr><td class="metric">Eventos</td><td class="mono">fecha; posesion_id; cuarto; equipo; tipo; valor_resultado; modo; dorsal; tablero; jugadores_lucha</td></tr>
+          <tr><td class="metric">Faltas y TM</td><td class="mono">fecha; tipo; equipo; cuarto; dorsal</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <small class="note">Separador punto y coma y codificación UTF-8 con BOM: se abren directamente en Excel en español. El campo <span class="mono">posesion_id</span> del archivo de eventos enlaza con <span class="mono">id</span> del de posesiones, así que puedes reconstruir cada posesión completa en una tabla dinámica.</small>
+  </section>
+
+  <section id="problemas">
+    <span class="sec-num">07</span>
+    <h2>Si algo falla</h2>
+    <p class="sec-lede">Por orden, de lo más probable a lo más raro.</p>
+    <dl class="defs">
+      <div><dt>La app se cerró sola</dt><dd>Vuelve a abrirla desde el icono. Recupera el partido donde estaba, incluso a mitad de una serie de tiros libres, y te lo dice con un aviso abajo. El guardado es en cada acción, no al final.</dd></div>
+      <div><dt>El indicador de arriba está en rojo</dt><dd>El teléfono no está pudiendo guardar, normalmente por falta de espacio. Exporta los CSV inmediatamente y no cierres la app hasta haberlo hecho.</dd></div>
+      <div><dt>Abro la app y el partido no está</dt><dd>Casi siempre es que la abriste desde Safari en vez del icono, o al revés. Ciérrala y entra por el otro camino. Si aun así no aparece, la app busca en su copia interna y te ofrece recuperarla.</dd></div>
+      <div><dt>Aparece la pantalla de recuperación</dt><dd>Los datos guardados tienen una forma que la app no entiende. Pulsa primero <span class="k k-warn">Descargar copia de los datos en bruto</span> por si se pueden rescatar, y solo después borra y empieza de cero. Los partidos ya archivados no se tocan.</dd></div>
+      <div><dt>Quiero pasar los datos a otro móvil</dt><dd>Exporta el JSON en el primero, instala la app en el segundo e impórtalo desde <em>Copia de seguridad y datos</em>. Sustituye el partido en curso y el archivo de partidos, así que hazlo en un teléfono vacío.</dd></div>
+    </dl>
+  </section>
+
+  <footer>
+    <p>Manual de uso · Posesiones CBT</p>
+    <p>Val Brokers CB Tomelloso · Tercera FEB</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.jump a'));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  if(!('IntersectionObserver' in window)) return;
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      var i = sections.indexOf(e.target);
+      if(i < 0) return;
+      links.forEach(function(l){ l.classList.remove('active'); });
+      links[i].classList.add('active');
+    });
+  }, {rootMargin: '-54px 0px -70% 0px'});
+  sections.forEach(function(s){ if(s) obs.observe(s); });
+})();
+</script>
+</body>
+</html>

@@ -159,6 +159,18 @@
   .empty-hint{color:var(--muted);font-size:12px;text-align:center;padding:14px 6px;}
   .hint{color:var(--muted);font-size:11px;line-height:1.5;margin-top:8px;}
 
+  /* Manual superpuesto: se lee sin salir de la app, así el partido en curso
+     ni se descarga ni se recarga. */
+  #helpOverlay{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;}
+  #helpOverlay[hidden]{display:none;}
+  .help-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:calc(8px + env(safe-area-inset-top)) 12px 8px;border-bottom:1px solid var(--line);
+    background:var(--surface);flex:none;}
+  .help-bar span{font-size:13px;font-weight:700;color:var(--ink);}
+  .help-bar button{background:var(--surface2);border:1px solid var(--cbt);color:var(--cbt);
+    border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;}
+  #helpFrame{flex:1;width:100%;border:0;background:var(--bg);}
+
   /* Avisos flotantes */
   #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(74px + env(safe-area-inset-bottom));
     background:var(--surface2);border:1px solid var(--gold);color:var(--ink);border-radius:10px;
@@ -238,6 +250,18 @@
   </button>
   <div class="panel" id="backupPanel" style="display:none;"></div>
 
+  <button class="stats-toggle" id="helpToggle">
+    <span>Manual de uso</span><span class="chev">›</span>
+  </button>
+
+</div>
+
+<div id="helpOverlay" hidden>
+  <div class="help-bar">
+    <span>Manual de uso</span>
+    <button id="helpClose">Volver a la app</button>
+  </div>
+  <iframe id="helpFrame" title="Manual de uso de Posesiones CBT"></iframe>
 </div>
 
 <div class="footer">
@@ -252,7 +276,7 @@
 (function(){
   "use strict";
 
-  var APP_VERSION = '2.0.1';
+  var APP_VERSION = '2.1.0';
 
   /* =======================================================================
      Pantalla de emergencia: si cualquier cosa revienta, esto tiene que
@@ -1849,6 +1873,19 @@
     exportEventsCSV(state.possessions, csvName('eventos'), state.matchDate);
   };
   document.getElementById('undoBtn').onclick = undo;
+
+  /* Manual: se carga la primera vez que se abre y se queda en memoria. */
+  (function(){
+    var overlay = document.getElementById('helpOverlay');
+    var frame = document.getElementById('helpFrame');
+    document.getElementById('helpToggle').onclick = function(){
+      if(!frame.getAttribute('src')) frame.setAttribute('src', './manual.html');
+      overlay.hidden = false;
+    };
+    document.getElementById('helpClose').onclick = function(){
+      overlay.hidden = true;
+    };
+  })();
 
   /* =======================================================================
      Arranque
