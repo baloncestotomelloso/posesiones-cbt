@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Posesiones CBT</title>
+
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#15120e">
+<meta name="color-scheme" content="dark">
+<meta name="application-name" content="Posesiones CBT">
+<meta name="description" content="Registro en vivo de partidos por posesiones del CB Tomelloso.">
+
+<!-- iOS: pantalla completa sin barra de Safari al abrir desde el icono -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Posesiones CBT">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+
+<style>
+  :root{
+    --bg:#15120e;
+    --surface:#1e1912;
+    --surface2:#241d15;
+    --line:#3a2f22;
+    --ink:#f3ece0;
+    --muted:#a3937c;
+    --cbt:#e8792b;
+    --cbt-dim:#4a2c14;
+    --rival:#3d6b8a;
+    --rival-dim:#182a35;
+    --good:#5fa876;
+    --bad:#c85a4f;
+    --gold:#e0b039;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-user-select:none;user-select:none;
+    overscroll-behavior:none;touch-action:manipulation;}
+  html{min-height:100%;}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;}
+  #app{max-width:520px;margin:0 auto;
+    padding:calc(8px + env(safe-area-inset-top)) 10px 96px;}
+
+  /* Barra de estado de la sesión */
+  .statusbar{display:flex;gap:6px;align-items:center;justify-content:space-between;
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:6px 8px;margin-bottom:8px;font-size:11px;color:var(--muted);}
+  .statusbar .save-state{display:flex;align-items:center;gap:5px;font-weight:600;
+    font-variant-numeric:tabular-nums;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--good);flex:none;}
+  .dot.warn{background:var(--gold);}
+  .dot.bad{background:var(--bad);}
+  .pill{background:var(--surface2);border:1px solid var(--line);color:var(--muted);
+    border-radius:20px;padding:6px 11px;font-size:11px;font-weight:700;white-space:nowrap;}
+  .pill.on{background:#3a3120;border-color:var(--gold);color:var(--gold);}
+
+  /* Aviso de instalación */
+  .install-note{background:var(--cbt-dim);border:1px solid var(--cbt);border-radius:12px;
+    padding:11px 12px;margin-bottom:9px;font-size:12px;line-height:1.5;color:#f6d9bf;}
+  .install-note b{color:var(--cbt);}
+  .install-note button{display:block;background:none;border:none;color:var(--cbt);font-size:11px;
+    font-weight:700;text-decoration:underline;padding:8px 0 0;}
+
+  /* Marcador */
+  .scoreboard{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;}
+  .team-block{text-align:center;min-width:0;}
+  .team-block.cbt{color:var(--cbt);}
+  .team-block.rival{color:var(--rival);}
+  .team-name{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+    font-weight:600;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .team-score{font-size:38px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;}
+  .mid-info{text-align:center;}
+  .quarter-select{display:flex;gap:3px;}
+  .quarter-select button{background:var(--surface2);border:1px solid var(--line);color:var(--muted);
+    font-size:11px;font-weight:700;padding:5px 6px;border-radius:6px;}
+  .quarter-select button.on{background:var(--gold);color:#1a1206;border-color:var(--gold);}
+
+  .rival-row{display:flex;gap:6px;align-items:center;margin-bottom:8px;}
+  .rival-row input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);color:var(--ink);
+    padding:9px 10px;border-radius:8px;font-size:16px;-webkit-user-select:text;user-select:text;}
+  .rival-row label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+    width:48px;flex:none;}
+
+  .poss-banner{display:none;padding:9px 12px;border-radius:10px;margin-bottom:10px;
+    font-size:13px;font-weight:700;text-align:center;letter-spacing:.02em;}
+  .poss-banner.show{display:block;}
+  .poss-banner.cbt{background:var(--cbt-dim);color:var(--cbt);border:1px solid var(--cbt);}
+  .poss-banner.rival{background:var(--rival-dim);color:var(--rival);border:1px solid var(--rival);}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;}
+  .panel-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+    font-weight:700;margin-bottom:9px;}
+
+  .btn-grid{display:grid;gap:8px;}
+  .g2{grid-template-columns:1fr 1fr;}
+  .g3{grid-template-columns:1fr 1fr 1fr;}
+  .g4{grid-template-columns:1fr 1fr 1fr 1fr;}
+
+  button{font-family:inherit;cursor:pointer;border:none;}
+  .btn{background:var(--surface2);border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:14px 8px;font-size:14px;font-weight:700;text-align:center;line-height:1.2;}
+  .btn:active{transform:scale(0.96);}
+  .btn small{display:block;font-weight:500;color:var(--muted);font-size:11px;margin-top:2px;}
+
+  .btn-open-cbt{background:var(--cbt);color:#1a1206;font-size:17px;padding:22px 10px;border-radius:14px;}
+  .btn-open-cbt small{color:#5a3712;}
+  .btn-open-rival{background:var(--rival);color:#0b1a22;font-size:17px;padding:22px 10px;border-radius:14px;}
+  .btn-open-rival small{color:#123040;}
+
+  .btn-make{background:#233b2a;border-color:var(--good);color:var(--good);}
+  .btn-miss{background:#3a2320;border-color:var(--bad);color:var(--bad);}
+  .btn-neutral{background:var(--surface2);border-color:var(--line);}
+  .btn-warn{background:#3a3120;border-color:var(--gold);color:var(--gold);}
+  .btn-close{background:transparent;border:1px dashed var(--muted);color:var(--muted);font-size:12px;padding:9px;}
+
+  .keypad{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px;}
+  .keypad button{padding:12px 0;font-size:15px;}
+
+  .ft-track{display:flex;gap:8px;justify-content:center;margin:8px 0;}
+  .ft-dot{width:34px;height:34px;border-radius:50%;border:2px solid var(--muted);display:flex;
+    align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--muted);}
+  .ft-dot.made{border-color:var(--good);color:var(--good);background:#1c2b20;}
+  .ft-dot.missed{border-color:var(--bad);color:var(--bad);background:#2b1b18;}
+
+  .stats-toggle{width:100%;background:var(--surface);border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:11px;font-size:13px;font-weight:700;margin-bottom:10px;display:flex;
+    justify-content:space-between;align-items:center;}
+  .stats-toggle span.chev{color:var(--muted);font-weight:400;}
+  table.stats{width:100%;border-collapse:collapse;font-size:12px;}
+  table.stats th{text-align:left;color:var(--muted);font-weight:600;padding:5px 4px;border-bottom:1px solid var(--line);font-size:10px;text-transform:uppercase;letter-spacing:.04em;}
+  table.stats td{padding:6px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;}
+  table.stats td.lbl{color:var(--muted);}
+  table.stats td.cbt-col{color:var(--cbt);font-weight:700;}
+  table.stats td.rival-col{color:var(--rival);font-weight:700;}
+  .stats-section-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);
+    font-weight:700;margin:12px 0 4px;}
+
+  .feed{display:flex;flex-direction:column-reverse;gap:6px;max-height:340px;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  .feed-item{border-left:3px solid var(--line);padding:6px 9px;border-radius:0 8px 8px 0;background:var(--surface2);}
+  .feed-item.cbt{border-left-color:var(--cbt);}
+  .feed-item.rival{border-left-color:var(--rival);}
+  .feed-head{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:2px;gap:8px;}
+  .feed-result{font-size:13px;font-weight:700;}
+  .feed-events{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4;}
+
+  .footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--line);
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:flex;gap:8px;max-width:520px;margin:0 auto;}
+  .footer button{flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--muted);
+    border-radius:10px;padding:11px 4px;font-size:11px;font-weight:700;}
+  .footer button.undo{color:var(--gold);border-color:var(--gold);}
+
+  .empty-hint{color:var(--muted);font-size:12px;text-align:center;padding:14px 6px;}
+  .hint{color:var(--muted);font-size:11px;line-height:1.5;margin-top:8px;}
+
+  /* Avisos flotantes */
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(74px + env(safe-area-inset-bottom));
+    background:var(--surface2);border:1px solid var(--gold);color:var(--ink);border-radius:10px;
+    padding:10px 14px;font-size:12px;font-weight:600;max-width:88vw;text-align:center;
+    opacity:0;pointer-events:none;transition:opacity .18s ease;z-index:50;line-height:1.4;}
+  #toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="statusbar">
+    <div class="save-state"><span class="dot" id="saveDot"></span><span id="saveText">Guardado</span></div>
+    <button class="pill" id="wakePill">Pantalla: auto</button>
+  </div>
+
+  <div class="install-note" id="installNote" style="display:none;"></div>
+
+  <div class="scoreboard">
+    <div class="team-block cbt">
+      <div class="team-name" id="nameCBT">CBT</div>
+      <div class="team-score" id="scoreCBT">0</div>
+    </div>
+    <div class="mid-info">
+      <div class="quarter-select" id="quarterSelect"></div>
+    </div>
+    <div class="team-block rival">
+      <div class="team-name" id="nameRival">RIVAL</div>
+      <div class="team-score" id="scoreRival">0</div>
+    </div>
+  </div>
+
+  <div class="rival-row">
+    <label>Rival</label>
+    <input type="text" id="rivalInput" placeholder="Nombre del equipo rival" maxlength="24"
+           autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+  </div>
+  <div class="rival-row">
+    <label>Fecha</label>
+    <input type="date" id="matchDateInput">
+  </div>
+
+  <div class="poss-banner" id="possBanner"></div>
+
+  <div class="panel" id="actionPanel"></div>
+
+  <button class="stats-toggle" id="statsToggle">
+    <span>Panel de decisión en vivo</span><span class="chev" id="statsChev">▼</span>
+  </button>
+  <div class="panel" id="statsPanel" style="display:none;"></div>
+
+  <button class="stats-toggle" id="feedToggle">
+    <span>Historial de posesiones</span><span class="chev" id="feedChev">▼</span>
+  </button>
+  <div class="panel" id="feedPanel" style="display:none;">
+    <div class="feed" id="feed"></div>
+  </div>
+
+  <button class="stats-toggle" id="adminToggle">
+    <span>Datos administrativos</span><span class="chev" id="adminChev">▼</span>
+  </button>
+  <div class="panel" id="adminPanel" style="display:none;"></div>
+
+  <button class="stats-toggle" id="matchesToggle">
+    <span>Partidos guardados</span><span class="chev" id="matchesChev">▼</span>
+  </button>
+  <div class="panel" id="matchesPanel" style="display:none;">
+    <button class="btn btn-warn" id="newMatchBtn" style="width:100%;margin-bottom:10px;">Guardar este partido y empezar uno nuevo</button>
+    <div class="feed" id="matchesFeed"></div>
+    <div style="text-align:center;margin-top:14px;">
+      <button id="resetBtn" style="background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;padding:8px;">Borrar el partido actual sin guardar</button>
+    </div>
+  </div>
+
+  <button class="stats-toggle" id="backupToggle">
+    <span>Copia de seguridad y datos</span><span class="chev" id="backupChev">▼</span>
+  </button>
+  <div class="panel" id="backupPanel" style="display:none;"></div>
+
+</div>
+
+<div class="footer">
+  <button id="exportPossBtn">CSV posesiones</button>
+  <button id="exportEventsBtn">CSV eventos</button>
+  <button id="undoBtn" class="undo">Deshacer</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var APP_VERSION = '2.0.0';
+
+  /* =======================================================================
+     Pantalla de emergencia: si cualquier cosa revienta, esto tiene que
+     seguir funcionando. No depende de nada del resto del programa.
+     ======================================================================= */
+  function recoverUI(){
+    try{
+      var app = document.getElementById('app');
+      if(!app) return;
+      app.innerHTML = '';
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'padding:24px 16px;text-align:center;';
+
+      var h = document.createElement('div');
+      h.textContent = 'La app encontró un problema con los datos guardados';
+      h.style.cssText = 'color:#f3ece0;font-size:17px;font-weight:800;margin-bottom:10px;';
+
+      var p = document.createElement('div');
+      p.textContent = 'Puede pasar si quedó un registro incompleto de una sesión anterior. Primero descarga una copia de los datos en bruto (por si se pueden rescatar) y después borra y empieza de cero.';
+      p.style.cssText = 'color:#a3937c;font-size:13px;margin-bottom:18px;line-height:1.5;';
+
+      var dl = document.createElement('button');
+      dl.textContent = 'Descargar copia de los datos en bruto';
+      dl.style.cssText = 'background:#241d15;color:#e0b039;border:1px solid #e0b039;border-radius:10px;padding:14px 20px;font-size:14px;font-weight:700;width:100%;margin-bottom:10px;';
+      dl.onclick = function(){
+        try{
+          var dump = {};
+          for(var i=0;i<localStorage.length;i++){
+            var k = localStorage.key(i);
+            if(k && k.indexOf('cbt_') === 0) dump[k] = localStorage.getItem(k);
+          }
+          var blob = new Blob([JSON.stringify(dump, null, 2)], {type:'application/json'});
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'cbt_datos_en_bruto.json';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }catch(e){ alert('No se pudo generar la copia.'); }
+      };
+
+      var b = document.createElement('button');
+      b.textContent = 'Borrar el partido en curso y recargar';
+      b.style.cssText = 'background:#c85a4f;color:#fff;border:none;border-radius:10px;padding:16px 20px;font-size:15px;font-weight:700;width:100%;';
+      b.onclick = function(){
+        try{
+          localStorage.removeItem('cbt_posesiones_state_v2');
+          localStorage.removeItem('cbt_posesiones_state_v1');
+          localStorage.removeItem('cbt_posesiones_prev_v2');
+        }catch(e){}
+        location.reload();
+      };
+
+      var note = document.createElement('div');
+      note.textContent = 'Los partidos ya archivados en "Partidos guardados" no se tocan.';
+      note.style.cssText = 'color:#a3937c;font-size:11px;margin-top:14px;';
+
+      wrap.appendChild(h); wrap.appendChild(p); wrap.appendChild(dl); wrap.appendChild(b); wrap.appendChild(note);
+      app.appendChild(wrap);
+    }catch(e2){}
+  }
+
+  try{
+
+  /* =======================================================================
+     Estado
+     ======================================================================= */
+  var state = {
+    rival: "",
+    matchDate: "",
+    quarter: 1,
+    possessions: [],       // posesiones cerradas
+    current: null,         // posesión activa {id, team, events[], carry, startTime}
+    pending: null,         // 'afterMake' | 'freeThrows' | 'rebound' | 'dorsalShot' | 'dorsalTurnover' | 'foulPicker'
+    ft: null,              // {total, made:[bool], bonus:bool}
+    reboundCtx: null,
+    shotCtx: null,
+    nextId: 1,
+    personalFouls: [],     // {id, team, dorsal, quarter}
+    timeouts: [],          // {id, team, quarter}
+    afterTurnoverTeam: null,
+    lastMakeValue: 0,
+    lastMakeDorsal: null,
+    ui: {stats:false, feed:false, admin:false, matches:false, backup:false, wake:true}
+  };
+
+  var els = {};
+  ['scoreCBT','scoreRival','nameCBT','nameRival','rivalInput','matchDateInput','quarterSelect',
+   'possBanner','actionPanel','statsPanel','statsToggle','statsChev','feedPanel','feedToggle',
+   'feedChev','feed','matchesPanel','matchesToggle','matchesChev','matchesFeed','adminPanel',
+   'adminToggle','adminChev','backupPanel','backupToggle','backupChev','saveDot','saveText',
+   'wakePill','installNote','toast'].forEach(function(id){ els[id] = document.getElementById(id); });
+
+  function otherTeam(t){ return t === 'CBT' ? 'RIVAL' : 'CBT'; }
+  function rivalName(){ return state.rival || 'Rival'; }
+
+  function todayISODate(){
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function fmtDateOnly(isoDate){
+    if(!isoDate) return '';
+    var p = String(isoDate).split('-');
+    return p.length === 3 ? p[2]+'/'+p[1]+'/'+p[0] : isoDate;
+  }
+  function fmtClock(ts){
+    var d = new Date(ts);
+    return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+  }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  function toast(msg, ms){
+    els.toast.textContent = msg;
+    els.toast.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ els.toast.classList.remove('show'); }, ms || 2600);
+  }
+
+  /* =======================================================================
+     Persistencia. Tres capas, porque el partido no se puede perder:
+       1. localStorage  -> escritura síncrona en cada acción
+       2. IndexedDB     -> espejo asíncrono (sobrevive mejor a limpiezas de iOS)
+       3. Copia de seguridad periódica en ambas
+     ======================================================================= */
+  var LS_STATE   = 'cbt_posesiones_state_v2';
+  var LS_LEGACY  = 'cbt_posesiones_state_v1';
+  var LS_PREV    = 'cbt_posesiones_prev_v2';
+  var LS_BACKUP  = 'cbt_posesiones_backup_v2';
+  var LS_MATCHES = 'cbt_partidos_guardados_v1';
+
+  var saveCount = 0, lastSaveAt = 0, saveHealthy = true;
+
+  /* --- IndexedDB (mínimo, sin librerías) --- */
+  var idbReady = null;
+  function idb(){
+    if(idbReady) return idbReady;
+    idbReady = new Promise(function(resolve){
+      try{
+        if(!window.indexedDB) return resolve(null);
+        var req = indexedDB.open('cbt-posesiones', 1);
+        req.onupgradeneeded = function(){
+          var db = req.result;
+          if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+        };
+        req.onsuccess = function(){ resolve(req.result); };
+        req.onerror = function(){ resolve(null); };
+        setTimeout(function(){ resolve(null); }, 3000);
+      }catch(e){ resolve(null); }
+    });
+    return idbReady;
+  }
+  function idbPut(key, value){
+    return idb().then(function(db){
+      if(!db) return;
+      try{
+        var tx = db.transaction('kv','readwrite');
+        tx.objectStore('kv').put(value, key);
+      }catch(e){}
+    }).catch(function(){});
+  }
+  function idbGet(key){
+    return idb().then(function(db){
+      if(!db) return null;
+      return new Promise(function(resolve){
+        try{
+          var r = db.transaction('kv','readonly').objectStore('kv').get(key);
+          r.onsuccess = function(){ resolve(r.result || null); };
+          r.onerror = function(){ resolve(null); };
+        }catch(e){ resolve(null); }
+      });
+    }).catch(function(){ return null; });
+  }
+
+  var idbTimer = null;
+  function persistState(){
+    var json;
+    try{ json = JSON.stringify(state); }
+    catch(e){ saveHealthy = false; renderSaveBadge(); return; }
+
+    try{
+      localStorage.setItem(LS_STATE, json);
+      if(undoStack.length) localStorage.setItem(LS_PREV, JSON.stringify(undoStack[undoStack.length-1]));
+      lastSaveAt = Date.now();
+      saveHealthy = true;
+    }catch(e){
+      saveHealthy = false;
+    }
+
+    saveCount++;
+    if(saveCount % 20 === 0){
+      try{ localStorage.setItem(LS_BACKUP, json); }catch(e){}
+      idbPut('backup', json);
+    }
+
+    clearTimeout(idbTimer);
+    idbTimer = setTimeout(function(){ idbPut('state', json); }, 600);
+
+    renderSaveBadge();
+  }
+
+  /* Vaciado inmediato: se llama justo cuando iOS se lleva la app a segundo
+     plano o bloquea la pantalla, que es el momento crítico. */
+  function flushNow(){
+    try{
+      var json = JSON.stringify(state);
+      localStorage.setItem(LS_STATE, json);
+      clearTimeout(idbTimer);
+      idbPut('state', json);
+      lastSaveAt = Date.now();
+    }catch(e){}
+  }
+
+  function renderSaveBadge(){
+    if(!els.saveDot) return;
+    if(!saveHealthy){
+      els.saveDot.className = 'dot bad';
+      els.saveText.textContent = 'SIN GUARDAR — exporta ya';
+      return;
+    }
+    els.saveDot.className = 'dot';
+    els.saveText.textContent = lastSaveAt ? ('Guardado ' + fmtClock(lastSaveAt)) : 'Listo';
+  }
+
+  function loadState(){
+    var raw = null, from = '';
+    try{ raw = localStorage.getItem(LS_STATE); if(raw) from = 'v2'; }catch(e){}
+    if(!raw){ try{ raw = localStorage.getItem(LS_LEGACY); if(raw) from = 'v1'; }catch(e){} }
+    if(!raw){ try{ raw = localStorage.getItem(LS_BACKUP); if(raw) from = 'backup'; }catch(e){} }
+    if(!raw) return '';
+    try{
+      var saved = JSON.parse(raw);
+      if(saved && typeof saved === 'object'){
+        Object.assign(state, saved);
+        return from;
+      }
+    }catch(e){}
+    return '';
+  }
+
+  function clearStoredState(){
+    try{
+      localStorage.removeItem(LS_STATE);
+      localStorage.removeItem(LS_LEGACY);
+      localStorage.removeItem(LS_PREV);
+    }catch(e){}
+    idbPut('state', '');
+  }
+
+  /* Sanea cualquier dato guardado con forma inesperada para que un registro
+     antiguo o incompleto nunca pueda romper el render. */
+  function normalizeState(){
+    if(typeof state.matchDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(state.matchDate)){
+      state.matchDate = todayISODate();
+    }
+    if(!Array.isArray(state.possessions)) state.possessions = [];
+    state.possessions = state.possessions.filter(function(p){
+      return p && typeof p === 'object';
+    }).map(function(p){
+      if(!Array.isArray(p.events)) p.events = [];
+      if(typeof p.points !== 'number' || !isFinite(p.points)) p.points = 0;
+      if(p.team !== 'CBT' && p.team !== 'RIVAL') p.team = 'CBT';
+      if(typeof p.quarter !== 'number') p.quarter = 1;
+      if(typeof p.id !== 'number') p.id = Date.now() + Math.random();
+      p.hasORB = !!p.hasORB;
+      p.afterOppTurnover = !!p.afterOppTurnover;
+      return p;
+    });
+
+    if(state.current && (typeof state.current !== 'object' || !Array.isArray(state.current.events))) state.current = null;
+    if(state.current && state.current.team !== 'CBT' && state.current.team !== 'RIVAL') state.current = null;
+    if(state.current && typeof state.current.carry !== 'number') state.current.carry = 0;
+
+    var valid = ['afterMake','freeThrows','rebound','dorsalShot','dorsalTurnover','foulPicker'];
+    if(valid.indexOf(state.pending) === -1) state.pending = null;
+
+    if(typeof state.rival !== 'string') state.rival = '';
+    if(typeof state.quarter !== 'number' || state.quarter < 1 || state.quarter > 5) state.quarter = 1;
+    if(typeof state.nextId !== 'number') state.nextId = 1;
+    if(typeof state.lastMakeValue !== 'number') state.lastMakeValue = 0;
+    if(state.ft && typeof state.ft !== 'object') state.ft = null;
+    if(state.ft && !Array.isArray(state.ft.made)) state.ft = null;
+    if(state.reboundCtx && typeof state.reboundCtx !== 'object') state.reboundCtx = null;
+    if(state.shotCtx && typeof state.shotCtx !== 'object') state.shotCtx = null;
+    if(state.afterTurnoverTeam !== 'CBT' && state.afterTurnoverTeam !== 'RIVAL') state.afterTurnoverTeam = null;
+
+    if(!Array.isArray(state.personalFouls)) state.personalFouls = [];
+    state.personalFouls = state.personalFouls.filter(function(f){ return f && typeof f === 'object'; });
+    if(!Array.isArray(state.timeouts)) state.timeouts = [];
+    state.timeouts = state.timeouts.filter(function(t){ return t && typeof t === 'object'; });
+
+    if(!state.ui || typeof state.ui !== 'object') state.ui = {};
+    ['stats','feed','admin','matches','backup'].forEach(function(k){ state.ui[k] = !!state.ui[k]; });
+    if(typeof state.ui.wake !== 'boolean') state.ui.wake = true;
+
+    // Coherencia: no puede haber un paso pendiente sin posesión abierta.
+    if(!state.current){
+      state.pending = null; state.ft = null; state.reboundCtx = null; state.shotCtx = null;
+    }
+    state._dorsalBuffer = '';
+  }
+
+  /* =======================================================================
+     Deshacer: pila de instantáneas. Robusto frente a cualquier secuencia.
+     ======================================================================= */
+  var undoStack = [];
+  function pushUndo(){
+    try{
+      undoStack.push(clone(state));
+      if(undoStack.length > 80) undoStack.shift();
+    }catch(e){}
+  }
+  function undo(){
+    if(!undoStack.length){ toast('No queda nada que deshacer'); return; }
+    var prev = undoStack.pop();
+    Object.keys(state).forEach(function(k){ delete state[k]; });
+    Object.assign(state, prev);
+    normalizeState();
+    syncInputsFromState();
+    recalcScore();
+    render();
+    toast('Deshecho');
+  }
+
+  /* =======================================================================
+     Partidos archivados
+     ======================================================================= */
+  function loadMatches(){
+    try{
+      var raw = localStorage.getItem(LS_MATCHES);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    }catch(e){ return []; }
+  }
+  function saveMatches(arr){
+    try{ localStorage.setItem(LS_MATCHES, JSON.stringify(arr)); }catch(e){ toast('No se pudo guardar el archivo de partidos'); }
+    idbPut('matches', JSON.stringify(arr));
+  }
+  function matchScore(possessions){
+    var cbt = 0, riv = 0;
+    possessions.forEach(function(p){ if(p.team === 'CBT') cbt += p.points; else riv += p.points; });
+    return {cbt:cbt, riv:riv};
+  }
+  function hasAnyData(){
+    return !!(state.possessions.length || state.current || state.personalFouls.length || state.timeouts.length);
+  }
+  function archiveCurrentMatch(){
+    if(!hasAnyData()) return null;
+    var sc = matchScore(state.possessions);
+    var entry = {
+      id: Date.now(),
+      savedAt: new Date().toISOString(),
+      rival: state.rival || 'Rival',
+      matchDate: state.matchDate || todayISODate(),
+      quarter: state.quarter,
+      scoreCBT: sc.cbt,
+      scoreRival: sc.riv,
+      possessions: clone(state.possessions),
+      personalFouls: clone(state.personalFouls || []),
+      timeouts: clone(state.timeouts || [])
+    };
+    var matches = loadMatches();
+    matches.push(entry);
+    saveMatches(matches);
+    return entry;
+  }
+  function startNewMatch(){
+    state.possessions = [];
+    state.current = null;
+    state.pending = null;
+    state.ft = null;
+    state.reboundCtx = null;
+    state.shotCtx = null;
+    state.nextId = 1;
+    state.quarter = 1;
+    state.rival = '';
+    state.matchDate = todayISODate();
+    state.personalFouls = [];
+    state.timeouts = [];
+    state.afterTurnoverTeam = null;
+    adminFoulCtx = null;
+    undoStack = [];
+    clearStoredState();
+    syncInputsFromState();
+    recalcScore();
+    render();
+  }
+
+  function syncInputsFromState(){
+    els.rivalInput.value = state.rival || '';
+    els.matchDateInput.value = state.matchDate || todayISODate();
+    els.nameRival.textContent = state.rival ? state.rival.toUpperCase().slice(0,14) : 'RIVAL';
+  }
+
+  /* =======================================================================
+     Lógica de posesión
+     ======================================================================= */
+  function openPossession(team){
+    if(state.current) return;
+    pushUndo();
+    var afterTov = (state.afterTurnoverTeam === team);
+    state.afterTurnoverTeam = null;
+    state.current = {
+      id: state.nextId++, team: team, events: [], carry: 0,
+      startTime: Date.now(), afterOppTurnover: afterTov
+    };
+    state.pending = null; state.ft = null; state.reboundCtx = null; state.shotCtx = null;
+    render();
+  }
+
+  function closePossession(resultKey, points){
+    var p = state.current;
+    if(!p) return;
+    p.result = resultKey;
+    p.points = points;
+    p.quarter = state.quarter;
+    p.endTime = Date.now();
+    p.hasORB = p.events.some(function(e){ return e.type === 'rebote' && e.posesion === 'ofensivo'; });
+    state.possessions.push(p);
+    state.current = null;
+    state.pending = null; state.ft = null; state.reboundCtx = null; state.shotCtx = null;
+    recalcScore();
+    render();
+  }
+
+  function addEvent(ev){
+    ev.t = Date.now();
+    state.current.events.push(ev);
+  }
+  function carry(){ return (state.current && state.current.carry) || 0; }
+
+  /* --- Tiro --- */
+  function shotAction(valor, anotado){
+    pushUndo();
+    state.pending = 'dorsalShot';
+    state.shotCtx = {valor:valor, anotado:anotado};
+    render();
+  }
+  function finalizeShot(dorsal){
+    var ctx = state.shotCtx;
+    if(!ctx) return;
+    addEvent({type:'tiro', valor:ctx.valor, resultado: ctx.anotado ? 'anotado' : 'fallado', dorsal: dorsal || null});
+    state.shotCtx = null;
+    if(ctx.anotado){
+      state.pending = 'afterMake';
+      state.lastMakeValue = ctx.valor;
+      state.lastMakeDorsal = dorsal || null;
+    } else {
+      state.pending = 'rebound';
+      state.reboundCtx = {};
+    }
+    render();
+  }
+  function confirmMakeNoFoul(){
+    pushUndo();
+    var v = state.lastMakeValue;
+    closePossession(v === 3 ? 'canasta3' : 'canasta2', carry() + v);
+  }
+  function makeWithAndOne(){
+    pushUndo();
+    // Los puntos de la canasta se apuntan YA: si luego falla el TL adicional y
+    // se captura el rebote ofensivo, la posesión sigue y no se pierden.
+    state.current.carry += state.lastMakeValue;
+    state.ft = {total:1, made:[], bonus:true};
+    state.pending = 'freeThrows';
+    render();
+  }
+
+  /* --- Pérdida --- */
+  function turnoverAction(){
+    pushUndo();
+    state.pending = 'dorsalTurnover';
+    render();
+  }
+  function finalizeTurnover(dorsal){
+    addEvent({type:'perdida', dorsal: dorsal || null});
+    var team = state.current.team;
+    var pts = carry();
+    closePossession('perdida', pts);
+    state.afterTurnoverTeam = otherTeam(team);
+    persistState();
+  }
+
+  /* --- Falta recibida --- */
+  function foulDrawnAction(n){
+    pushUndo();
+    addEvent({type:'falta', tirosLibres:n});
+    if(n === 0){
+      state.pending = null;
+      render();
+      return;
+    }
+    state.ft = {total:n, made:[], bonus:false};
+    state.pending = 'freeThrows';
+    render();
+  }
+  function ftResult(made){
+    pushUndo();
+    state.ft.made.push(made);
+    addEvent({type:'tiroLibre', anotado:made, numero: state.ft.made.length});
+
+    if(state.ft.made.length < state.ft.total){ render(); return; }
+
+    var ftPts = state.ft.made.filter(Boolean).length;
+    var lastMissed = !state.ft.made[state.ft.made.length - 1];
+
+    if(lastMissed){
+      // Último TL fallado: hay rebote en juego. Los puntos ya anotados se
+      // guardan en carry para que no se pierdan si la posesión continúa.
+      state.current.carry += ftPts;
+      state.ft = null;
+      state.pending = 'rebound';
+      state.reboundCtx = {fromFT:true};
+      render();
+    } else {
+      var pts = carry() + ftPts;
+      state.ft = null;
+      closePossession('tirosLibres', pts);
+    }
+  }
+
+  /* --- Rebote --- */
+  function reboundDefensive(){
+    pushUndo();
+    addEvent({type:'rebote', posesion:'defensivo', modo:'individual'});
+    var fromFT = !!(state.reboundCtx && state.reboundCtx.fromFT);
+    closePossession(fromFT ? 'tirosLibres' : 'rebDefensivoRival', carry());
+  }
+  function reboundOffensiveStart(mode){
+    pushUndo();
+    state.reboundCtx = state.reboundCtx || {};
+    state.reboundCtx.modo = mode;
+    state.reboundCtx.step = mode === 'individual' ? 'dorsal' : 'tablero';
+    render();
+  }
+  function reboundSetTablero(v){
+    state.reboundCtx.tablero = v;
+    state.reboundCtx.step = (state.reboundCtx.modo === 'individual' && !state.reboundCtx.dorsalSet) ? 'dorsal' : 'lucha';
+    render();
+  }
+  function reboundSetDorsal(d){
+    state.reboundCtx.dorsal = d;
+    state.reboundCtx.dorsalSet = true;
+    state.reboundCtx.step = state.reboundCtx.tablero ? 'lucha' : 'tablero';
+    render();
+  }
+  function reboundSetLucha(n){
+    var ctx = state.reboundCtx;
+    addEvent({
+      type:'rebote', posesion:'ofensivo', modo: ctx.modo,
+      dorsal: ctx.dorsal || null, tablero: ctx.tablero || null, jugadoresLucha: n
+    });
+    state.reboundCtx = null;
+    state.ft = null;
+    state.pending = null;   // la posesión continúa, con carry intacto
+    render();
+  }
+
+  function manualClose(){
+    pushUndo();
+    closePossession('otros', carry());
+  }
+
+  /* =======================================================================
+     Render
+     ======================================================================= */
+  function render(){
+    try{
+      renderQuarters();
+      renderBanner();
+      renderAction();
+      if(state.ui.stats) renderStats();
+      if(state.ui.feed) renderFeed();
+      if(state.ui.admin) renderAdmin();
+      if(state.ui.backup) renderBackup();
+      persistState();
+    }catch(err){
+      recoverUI();
+    }
+  }
+
+  function renderQuarters(){
+    var labels = ['1','2','3','4','OT'];
+    els.quarterSelect.innerHTML = '';
+    labels.forEach(function(lab, i){
+      var q = i + 1;
+      var b = document.createElement('button');
+      b.textContent = lab;
+      if(state.quarter === q) b.classList.add('on');
+      b.onclick = function(){ state.quarter = q; renderQuarters(); persistState(); };
+      els.quarterSelect.appendChild(b);
+    });
+  }
+
+  function recalcScore(){
+    var cbt = 0, riv = 0;
+    state.possessions.forEach(function(p){ if(p.team === 'CBT') cbt += p.points; else riv += p.points; });
+    els.scoreCBT.textContent = cbt;
+    els.scoreRival.textContent = riv;
+  }
+
+  function renderBanner(){
+    var b = els.possBanner;
+    if(!state.current){ b.className = 'poss-banner'; b.textContent = ''; return; }
+    var team = state.current.team;
+    b.className = 'poss-banner show ' + (team === 'CBT' ? 'cbt' : 'rival');
+    var label = team === 'CBT' ? 'CBT' : (state.rival || 'RIVAL');
+    var extra = state.current.afterOppTurnover ? ' · tras pérdida' : '';
+    var pts = carry() ? ' · ' + carry() + ' pts ya anotados' : '';
+    b.textContent = 'Posesión de ' + label + extra + pts;
+  }
+
+  function btn(html, cls, onclick){
+    var b = document.createElement('button');
+    b.className = 'btn ' + (cls || '');
+    b.innerHTML = html;
+    b.onclick = onclick;
+    return b;
+  }
+
+  /* El teclado de dorsal se usa tanto en el panel de acción como en el de
+     datos administrativos, por eso recibe su propia función de repintado:
+     si repintase siempre el panel de acción, en administrativos no se vería
+     lo que vas tecleando. */
+  function renderDorsalKeypad(panel, title, onPick, rerender){
+    rerender = rerender || render;
+    var t = document.createElement('div');
+    t.className = 'panel-title';
+    t.textContent = title;
+    panel.appendChild(t);
+
+    var cur = state._dorsalBuffer || '';
+    var disp = document.createElement('div');
+    disp.className = 'btn-grid';
+    var dispBtn = btn('Dorsal: <span class="mono">' + (cur || '—') + '</span>', 'btn-neutral', function(){});
+    dispBtn.style.pointerEvents = 'none';
+    disp.appendChild(dispBtn);
+    panel.appendChild(disp);
+
+    var pad = document.createElement('div');
+    pad.className = 'keypad';
+    [1,2,3,4,5,6,7,8,9,'←',0,'OK'].forEach(function(k){
+      var b = document.createElement('button');
+      b.className = 'btn';
+      b.textContent = k;
+      b.onclick = function(){
+        if(k === '←'){ state._dorsalBuffer = (state._dorsalBuffer || '').slice(0,-1); rerender(); return; }
+        if(k === 'OK'){
+          var d = state._dorsalBuffer || null;
+          state._dorsalBuffer = '';
+          onPick(d);
+          return;
+        }
+        state._dorsalBuffer = ((state._dorsalBuffer || '') + String(k)).slice(0,2);
+        rerender();
+      };
+      pad.appendChild(b);
+    });
+    panel.appendChild(pad);
+
+    var skip = btn('Sin identificar', 'btn-close', function(){ state._dorsalBuffer = ''; onPick(null); });
+    skip.style.width = '100%'; skip.style.marginTop = '8px';
+    panel.appendChild(skip);
+  }
+
+  function renderAction(){
+    var panel = els.actionPanel;
+    panel.innerHTML = '';
+
+    if(!state.current){
+      var title = document.createElement('div');
+      title.className = 'panel-title';
+      title.textContent = 'Abrir posesión';
+      panel.appendChild(title);
+      var grid = document.createElement('div');
+      grid.className = 'btn-grid g2';
+      grid.appendChild(btn('CBT<br><small>ataca</small>', 'btn-open-cbt', function(){ openPossession('CBT'); }));
+      grid.appendChild(btn((state.rival || 'RIVAL') + '<br><small>ataca</small>', 'btn-open-rival', function(){ openPossession('RIVAL'); }));
+      panel.appendChild(grid);
+      if(state.afterTurnoverTeam){
+        var n = document.createElement('div');
+        n.className = 'hint';
+        n.textContent = 'La siguiente posesión de ' + (state.afterTurnoverTeam === 'CBT' ? 'CBT' : rivalName()) + ' se marcará como "tras pérdida".';
+        panel.appendChild(n);
+      }
+      return;
+    }
+
+    if(state.pending === 'dorsalShot' && state.shotCtx){
+      var c = state.shotCtx;
+      renderDorsalKeypad(panel, 'Tiro de ' + c.valor + (c.anotado ? ' anotado' : ' fallado') + '. ¿Quién tira?', finalizeShot);
+      return;
+    }
+
+    if(state.pending === 'dorsalTurnover'){
+      renderDorsalKeypad(panel, 'Pérdida. ¿Quién la pierde?', finalizeTurnover);
+      return;
+    }
+
+    if(state.pending === 'afterMake'){
+      var t1 = document.createElement('div');
+      t1.className = 'panel-title';
+      t1.textContent = 'Canasta de ' + state.lastMakeValue + (state.lastMakeDorsal ? ' (#' + state.lastMakeDorsal + ')' : '') + '. ¿Falta con la canasta?';
+      panel.appendChild(t1);
+      var g1 = document.createElement('div');
+      g1.className = 'btn-grid g2';
+      g1.appendChild(btn('Sin falta<br><small>cerrar posesión</small>', 'btn-neutral', confirmMakeNoFoul));
+      g1.appendChild(btn('+1 tiro libre<br><small>y una</small>', 'btn-warn', makeWithAndOne));
+      panel.appendChild(g1);
+      return;
+    }
+
+    if(state.pending === 'freeThrows' && state.ft){
+      var t2 = document.createElement('div');
+      t2.className = 'panel-title';
+      t2.textContent = 'Tiros libres (' + state.ft.made.length + '/' + state.ft.total + ')';
+      panel.appendChild(t2);
+
+      var track = document.createElement('div');
+      track.className = 'ft-track';
+      for(var i = 0; i < state.ft.total; i++){
+        var dot = document.createElement('div');
+        dot.className = 'ft-dot';
+        if(i < state.ft.made.length){
+          dot.classList.add(state.ft.made[i] ? 'made' : 'missed');
+          dot.textContent = state.ft.made[i] ? '✓' : '✗';
+        } else {
+          dot.textContent = (i + 1);
+        }
+        track.appendChild(dot);
+      }
+      panel.appendChild(track);
+
+      var g2 = document.createElement('div');
+      g2.className = 'btn-grid g2';
+      g2.appendChild(btn('Tiro libre<br>ANOTADO', 'btn-make', function(){ ftResult(true); }));
+      g2.appendChild(btn('Tiro libre<br>FALLADO', 'btn-miss', function(){ ftResult(false); }));
+      panel.appendChild(g2);
+      return;
+    }
+
+    if(state.pending === 'rebound'){
+      var ctx = state.reboundCtx || {};
+      if(!ctx.step){
+        var t3 = document.createElement('div');
+        t3.className = 'panel-title';
+        t3.textContent = (ctx.fromFT ? 'Último tiro libre fallado. ' : 'Tiro fallado. ') + 'Resultado del rebote';
+        panel.appendChild(t3);
+        var g3 = document.createElement('div');
+        g3.className = 'btn-grid g2';
+        g3.appendChild(btn('Rebote defensivo<br><small>' + (state.current.team === 'CBT' ? rivalName() : 'CBT') + '</small>', 'btn-miss', reboundDefensive));
+        g3.appendChild(btn('Rebote ofensivo<br><small>individual</small>', 'btn-make', function(){ reboundOffensiveStart('individual'); }));
+        panel.appendChild(g3);
+        var g3b = document.createElement('div');
+        g3b.className = 'btn-grid';
+        g3b.style.marginTop = '8px';
+        g3b.appendChild(btn('Rebote ofensivo de EQUIPO<br><small>disputado y sacamos de banda</small>', 'btn-warn', function(){ reboundOffensiveStart('equipo'); }));
+        panel.appendChild(g3b);
+        return;
+      }
+      if(ctx.step === 'tablero'){
+        var t4 = document.createElement('div');
+        t4.className = 'panel-title';
+        t4.textContent = (ctx.modo === 'equipo' ? 'Rebote de equipo · ' : 'Rebote individual · ') + 'Tipo de rebote';
+        panel.appendChild(t4);
+        var g4 = document.createElement('div');
+        g4.className = 'btn-grid g2';
+        g4.appendChild(btn('Corto<br><small>bajo el aro</small>', 'btn-neutral', function(){ reboundSetTablero('corto'); }));
+        g4.appendChild(btn('Largo<br><small>rechace lejano</small>', 'btn-neutral', function(){ reboundSetTablero('largo'); }));
+        panel.appendChild(g4);
+        return;
+      }
+      if(ctx.step === 'dorsal'){
+        renderDorsalKeypad(panel, 'Dorsal que captura', reboundSetDorsal);
+        return;
+      }
+      if(ctx.step === 'lucha'){
+        var t5 = document.createElement('div');
+        t5.className = 'panel-title';
+        t5.textContent = 'Jugadores en la lucha por el rebote';
+        panel.appendChild(t5);
+        var g5 = document.createElement('div');
+        g5.className = 'btn-grid g4';
+        [1,2,3,'4+'].forEach(function(n){
+          g5.appendChild(btn(String(n), 'btn-neutral', function(){ reboundSetLucha(n); }));
+        });
+        panel.appendChild(g5);
+        return;
+      }
+    }
+
+    if(state.pending === 'foulPicker'){
+      var tf = document.createElement('div');
+      tf.className = 'panel-title';
+      tf.textContent = 'Falta recibida. ¿Cuántos tiros libres?';
+      panel.appendChild(tf);
+      var gf = document.createElement('div');
+      gf.className = 'btn-grid g3';
+      [1,2,3].forEach(function(n){
+        gf.appendChild(btn(String(n), 'btn-warn', function(){ foulDrawnAction(n); }));
+      });
+      panel.appendChild(gf);
+      var noFt = btn('Falta sin tiros libres<br><small>la posesión sigue</small>', 'btn-neutral', function(){ foulDrawnAction(0); });
+      noFt.style.width = '100%'; noFt.style.marginTop = '8px';
+      panel.appendChild(noFt);
+      var back = btn('Cancelar', 'btn-close', function(){ state.pending = null; render(); });
+      back.style.width = '100%'; back.style.marginTop = '8px';
+      panel.appendChild(back);
+      return;
+    }
+
+    // Posesión abierta, sin paso pendiente
+    var t6 = document.createElement('div');
+    t6.className = 'panel-title';
+    t6.textContent = 'Evento de la posesión';
+    panel.appendChild(t6);
+
+    var gShots = document.createElement('div');
+    gShots.className = 'btn-grid g4';
+    gShots.appendChild(btn('T2<br>✓', 'btn-make', function(){ shotAction(2, true); }));
+    gShots.appendChild(btn('T2<br>✗', 'btn-miss', function(){ shotAction(2, false); }));
+    gShots.appendChild(btn('T3<br>✓', 'btn-make', function(){ shotAction(3, true); }));
+    gShots.appendChild(btn('T3<br>✗', 'btn-miss', function(){ shotAction(3, false); }));
+    panel.appendChild(gShots);
+
+    var gOther = document.createElement('div');
+    gOther.className = 'btn-grid g2';
+    gOther.style.marginTop = '8px';
+    gOther.appendChild(btn('Pérdida', 'btn-neutral', turnoverAction));
+    gOther.appendChild(btn('Falta recibida', 'btn-warn', function(){ pushUndo(); state.pending = 'foulPicker'; render(); }));
+    panel.appendChild(gOther);
+
+    var closeRow = document.createElement('div');
+    closeRow.style.marginTop = '8px';
+    var cb = btn('Cerrar posesión (violación / fin de cuarto / otros)', 'btn-close', manualClose);
+    cb.style.width = '100%';
+    closeRow.appendChild(cb);
+    panel.appendChild(closeRow);
+  }
+
+  /* =======================================================================
+     Estadísticas
+     ======================================================================= */
+  function computeStats(){
+    var blank = function(){
+      return {pts:0, t2a:0, t2i:0, t3a:0, t3i:0, tla:0, tli:0, orbInd:0, orbEq:0, drb:0,
+              tov:0, secondChancePts:0, poTov:0, poTovCount:0, fouls:0};
+    };
+    var s = {CBT: blank(), RIVAL: blank()};
+    var possessions = state.possessions;
+
+    for(var i = 0; i < possessions.length; i++){
+      var p = possessions[i];
+      var opp = otherTeam(p.team);
+      var st = s[p.team];
+      st.pts += p.points;
+
+      p.events.forEach(function(e){
+        if(e.type === 'tiro'){
+          if(e.valor === 2){ st.t2a++; if(e.resultado === 'anotado') st.t2i++; }
+          else { st.t3a++; if(e.resultado === 'anotado') st.t3i++; }
+        }
+        if(e.type === 'tiroLibre'){ st.tla++; if(e.anotado) st.tli++; }
+        if(e.type === 'falta'){ s[opp].fouls++; }
+        if(e.type === 'perdida'){ st.tov++; }
+        if(e.type === 'rebote'){
+          if(e.posesion === 'ofensivo'){
+            if(e.modo === 'equipo') st.orbEq++; else st.orbInd++;
+          } else {
+            s[opp].drb++;
+          }
+        }
+      });
+
+      if(p.hasORB) st.secondChancePts += p.points;
+
+      if(i > 0){
+        var prev = possessions[i-1];
+        if(prev.team === opp && prev.result === 'perdida'){
+          st.poTov += p.points;
+          st.poTovCount++;
+        }
+      }
+    }
+    return s;
+  }
+
+  function rowStat(label, a, b){
+    return '<tr><td class="lbl">' + label + '</td><td class="cbt-col">' + a + '</td><td class="rival-col">' + b + '</td></tr>';
+  }
+
+  function renderStats(){
+    var s = computeStats();
+    var rv = rivalName();
+
+    function orbPct(team){
+      var own = s[team].orbInd + s[team].orbEq;
+      var den = own + s[otherTeam(team)].drb;
+      return den > 0 ? Math.round((own/den)*1000)/10 : 0;
+    }
+    function tovPct(team){
+      var poss = state.possessions.filter(function(p){ return p.team === team; }).length;
+      return poss > 0 ? Math.round((s[team].tov/poss)*1000)/10 : 0;
+    }
+    function eFG(team){
+      var st = s[team], fga = st.t2a + st.t3a, fgm = st.t2i + st.t3i;
+      return fga > 0 ? Math.round(((fgm + 0.5*st.t3i)/fga)*1000)/10 : 0;
+    }
+    function ftRate(team){
+      var st = s[team], fga = st.t2a + st.t3a;
+      return fga > 0 ? Math.round((st.tla/fga)*1000)/10 : 0;
+    }
+
+    var html = '';
+    html += '<div class="stats-section-title">Four factors</div>';
+    html += '<table class="stats"><tr><th>Factor</th><th>CBT</th><th>' + rv + '</th></tr>';
+    html += rowStat('eFG%', eFG('CBT') + '%', eFG('RIVAL') + '%');
+    html += rowStat('TOV%', tovPct('CBT') + '%', tovPct('RIVAL') + '%');
+    html += rowStat('ORB%', orbPct('CBT') + '%', orbPct('RIVAL') + '%');
+    html += rowStat('FT Rate', ftRate('CBT') + '%', ftRate('RIVAL') + '%');
+    html += '</table>';
+
+    html += '<div class="stats-section-title">Tiro</div>';
+    html += '<table class="stats"><tr><th></th><th>CBT</th><th>' + rv + '</th></tr>';
+    html += rowStat('T2', s.CBT.t2i + '/' + s.CBT.t2a, s.RIVAL.t2i + '/' + s.RIVAL.t2a);
+    html += rowStat('T3', s.CBT.t3i + '/' + s.CBT.t3a, s.RIVAL.t3i + '/' + s.RIVAL.t3a);
+    html += rowStat('TL', s.CBT.tli + '/' + s.CBT.tla, s.RIVAL.tli + '/' + s.RIVAL.tla);
+    html += '</table>';
+
+    html += '<div class="stats-section-title">Rebote</div>';
+    html += '<table class="stats"><tr><th></th><th>CBT</th><th>' + rv + '</th></tr>';
+    html += rowStat('Ofensivo individual', s.CBT.orbInd, s.RIVAL.orbInd);
+    html += rowStat('Ofensivo de equipo', s.CBT.orbEq, s.RIVAL.orbEq);
+    html += rowStat('Defensivo', s.CBT.drb, s.RIVAL.drb);
+    html += '</table>';
+
+    html += '<div class="stats-section-title">Puntos por tipo de posesión</div>';
+    html += '<table class="stats"><tr><th></th><th>CBT</th><th>' + rv + '</th></tr>';
+    html += rowStat('2ª oportunidad', s.CBT.secondChancePts, s.RIVAL.secondChancePts);
+    html += rowStat('Tras pérdida rival (' + s.CBT.poTovCount + ')', s.CBT.poTov, '—');
+    html += rowStat('Tras pérdida propia (' + s.RIVAL.poTovCount + ')', '—', s.RIVAL.poTov);
+    html += rowStat('Pérdidas', s.CBT.tov, s.RIVAL.tov);
+    html += rowStat('Faltas cometidas', s.CBT.fouls, s.RIVAL.fouls);
+    html += '</table>';
+
+    var pfCBT = state.personalFouls.filter(function(f){ return f.team === 'CBT'; }).length;
+    var pfRIV = state.personalFouls.filter(function(f){ return f.team === 'RIVAL'; }).length;
+    var toCBT = state.timeouts.filter(function(t){ return t.team === 'CBT'; }).length;
+    var toRIV = state.timeouts.filter(function(t){ return t.team === 'RIVAL'; }).length;
+    html += '<div class="stats-section-title">Datos administrativos</div>';
+    html += '<table class="stats"><tr><th></th><th>CBT</th><th>' + rv + '</th></tr>';
+    html += rowStat('Faltas personales (total)', pfCBT, pfRIV);
+    html += rowStat('Tiempos muertos', toCBT, toRIV);
+    html += '</table>';
+
+    html += '<div class="stats-section-title">Posesiones</div>';
+    html += '<table class="stats"><tr><th></th><th>CBT</th><th>' + rv + '</th></tr>';
+    html += rowStat('Cerradas',
+      state.possessions.filter(function(p){ return p.team === 'CBT'; }).length,
+      state.possessions.filter(function(p){ return p.team === 'RIVAL'; }).length);
+    html += '</table>';
+
+    els.statsPanel.innerHTML = html;
+  }
+
+  /* =======================================================================
+     Historial narrativo
+     ======================================================================= */
+  function eventToText(e){
+    if(e.type === 'tiro') return 'Tiro de ' + e.valor + (e.dorsal ? ' (#' + e.dorsal + ')' : '') + ' ' + (e.resultado === 'anotado' ? 'anotado' : 'fallado');
+    if(e.type === 'tiroLibre') return 'TL ' + (e.anotado ? 'anotado' : 'fallado');
+    if(e.type === 'falta') return e.tirosLibres > 0 ? ('Falta recibida (' + e.tirosLibres + ' TL)') : 'Falta recibida (sin TL)';
+    if(e.type === 'perdida') return 'Pérdida' + (e.dorsal ? ' (#' + e.dorsal + ')' : '');
+    if(e.type === 'rebote'){
+      if(e.posesion === 'defensivo') return 'Rebote defensivo';
+      var base = e.modo === 'equipo' ? 'Rebote ofensivo de EQUIPO' : 'Rebote ofensivo' + (e.dorsal ? ' (#' + e.dorsal + ')' : '');
+      return base + (e.tablero ? ' · ' + e.tablero : '') + (e.jugadoresLucha ? ' · ' + e.jugadoresLucha + ' en la lucha' : '');
+    }
+    return e.type;
+  }
+  function resultLabel(p){
+    if(p.result === 'canasta2') return '2 PTS';
+    if(p.result === 'canasta3') return '3 PTS';
+    if(p.result === 'tirosLibres') return p.points + ' PTS (TL)';
+    if(p.result === 'perdida') return 'Pérdida';
+    if(p.result === 'rebDefensivoRival') return p.points > 0 ? p.points + ' PTS' : 'Rebote rival';
+    return p.points > 0 ? p.points + ' PTS' : 'Cerrada';
+  }
+
+  function renderFeed(){
+    var f = els.feed;
+    f.innerHTML = '';
+    if(!state.possessions.length){
+      var e = document.createElement('div');
+      e.className = 'empty-hint';
+      e.textContent = 'Todavía no hay posesiones registradas.';
+      f.appendChild(e);
+      return;
+    }
+    // Sólo las últimas 120: en un partido largo, repintar 300 posesiones en
+    // cada toque hace que los botones vayan a tirones.
+    var all = state.possessions;
+    var from = Math.max(0, all.length - 120);
+    for(var i = from; i < all.length; i++){
+      var p = all[i];
+      var item = document.createElement('div');
+      item.className = 'feed-item ' + (p.team === 'CBT' ? 'cbt' : 'rival');
+      var head = document.createElement('div');
+      head.className = 'feed-head';
+      head.innerHTML = '<span>#' + (i+1) + ' · Q' + p.quarter + '</span><span>' + (p.team === 'CBT' ? 'CBT' : rivalName()) + '</span>';
+      item.appendChild(head);
+      var res = document.createElement('div');
+      res.className = 'feed-result';
+      res.textContent = resultLabel(p) + (p.hasORB ? '  ·  2ª oport.' : '') + (p.afterOppTurnover ? '  ·  tras pérdida' : '');
+      item.appendChild(res);
+      if(p.events.length){
+        var ev = document.createElement('div');
+        ev.className = 'feed-events';
+        ev.textContent = p.events.map(eventToText).join(' → ');
+        item.appendChild(ev);
+      }
+      f.appendChild(item);
+    }
+  }
+
+  /* =======================================================================
+     Datos administrativos
+     ======================================================================= */
+  var adminFoulCtx = null;
+
+  function renderAdmin(){
+    var panel = els.adminPanel;
+    if(!panel) return;
+    panel.innerHTML = '';
+
+    var t1 = document.createElement('div');
+    t1.className = 'panel-title';
+    t1.textContent = 'Faltas personales';
+    panel.appendChild(t1);
+
+    if(adminFoulCtx){
+      renderDorsalKeypad(panel,
+        'Falta personal de ' + (adminFoulCtx.team === 'CBT' ? 'CBT' : rivalName()) + '. ¿Qué dorsal?',
+        function(d){
+          pushUndo();
+          state.personalFouls.push({id: Date.now() + Math.random(), team: adminFoulCtx.team, dorsal: d, quarter: state.quarter});
+          adminFoulCtx = null;
+          persistState();
+          renderAdmin();
+          if(state.ui.stats) renderStats();
+        },
+        renderAdmin);
+    } else {
+      var gf = document.createElement('div');
+      gf.className = 'btn-grid g2';
+      gf.appendChild(btn('Falta personal<br>CBT', 'btn-neutral', function(){ adminFoulCtx = {team:'CBT'}; state._dorsalBuffer = ''; renderAdmin(); }));
+      gf.appendChild(btn('Falta personal<br>' + rivalName(), 'btn-neutral', function(){ adminFoulCtx = {team:'RIVAL'}; state._dorsalBuffer = ''; renderAdmin(); }));
+      panel.appendChild(gf);
+
+      var counts = {};
+      state.personalFouls.forEach(function(f){
+        var key = f.team + '#' + (f.dorsal || '?');
+        counts[key] = counts[key] || {team:f.team, dorsal:f.dorsal, n:0};
+        counts[key].n++;
+      });
+      var rows = Object.keys(counts).map(function(k){ return counts[k]; })
+        .sort(function(a,b){ return b.n - a.n; });
+
+      var sum = document.createElement('div');
+      sum.style.marginTop = '10px';
+      if(!rows.length){
+        var eh = document.createElement('div');
+        eh.className = 'empty-hint';
+        eh.textContent = 'Todavía no hay faltas personales registradas.';
+        sum.appendChild(eh);
+      } else {
+        rows.forEach(function(r){
+          var row = document.createElement('div');
+          row.className = 'feed-item ' + (r.team === 'CBT' ? 'cbt' : 'rival');
+          var five = r.n >= 5;
+          row.innerHTML = '<div class="feed-head"><span>' + (r.team === 'CBT' ? 'CBT' : rivalName()) + ' · #' + (r.dorsal || 'sin identificar') + '</span>' +
+            '<span style="color:' + (five ? 'var(--bad)' : 'inherit') + ';font-weight:800;">' + r.n + ' ' + (five ? '⚠️' : '') + '</span></div>';
+          sum.appendChild(row);
+        });
+      }
+      panel.appendChild(sum);
+
+      if(state.personalFouls.length){
+        var uf = btn('Deshacer última falta personal', 'btn-close', function(){
+          pushUndo();
+          state.personalFouls.pop();
+          persistState();
+          renderAdmin();
+          if(state.ui.stats) renderStats();
+        });
+        uf.style.width = '100%'; uf.style.marginTop = '8px';
+        panel.appendChild(uf);
+      }
+    }
+
+    var t2 = document.createElement('div');
+    t2.className = 'panel-title';
+    t2.style.marginTop = '18px';
+    t2.textContent = 'Tiempos muertos';
+    panel.appendChild(t2);
+
+    var gt = document.createElement('div');
+    gt.className = 'btn-grid g2';
+    function addTimeout(team){
+      pushUndo();
+      state.timeouts.push({id: Date.now() + Math.random(), team: team, quarter: state.quarter});
+      persistState(); renderAdmin();
+      if(state.ui.stats) renderStats();
+    }
+    gt.appendChild(btn('Tiempo muerto<br>CBT', 'btn-warn', function(){ addTimeout('CBT'); }));
+    gt.appendChild(btn('Tiempo muerto<br>' + rivalName(), 'btn-warn', function(){ addTimeout('RIVAL'); }));
+    panel.appendChild(gt);
+
+    var tCBT = state.timeouts.filter(function(t){ return t.team === 'CBT'; }).length;
+    var tRIV = state.timeouts.filter(function(t){ return t.team === 'RIVAL'; }).length;
+    var tSum = document.createElement('div');
+    tSum.style.cssText = 'text-align:center;margin-top:10px;font-size:13px;color:var(--muted);';
+    tSum.innerHTML = 'CBT: <b style="color:var(--cbt);">' + tCBT + '</b> · ' + rivalName() + ': <b style="color:var(--rival);">' + tRIV + '</b>';
+    panel.appendChild(tSum);
+
+    if(state.timeouts.length){
+      var ut = btn('Deshacer último tiempo muerto', 'btn-close', function(){
+        pushUndo();
+        state.timeouts.pop();
+        persistState(); renderAdmin();
+        if(state.ui.stats) renderStats();
+      });
+      ut.style.width = '100%'; ut.style.marginTop = '8px';
+      panel.appendChild(ut);
+    }
+
+    var exp = btn('CSV faltas y tiempos muertos', 'btn-neutral', function(){
+      exportAdminCSV(state.personalFouls, state.timeouts, csvName('faltas_tm'), state.matchDate);
+    });
+    exp.style.width = '100%'; exp.style.marginTop = '16px';
+    panel.appendChild(exp);
+  }
+
+  /* =======================================================================
+     Partidos guardados
+     ======================================================================= */
+  function fmtSavedAt(iso){
+    try{
+      var d = new Date(iso);
+      return d.toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit'}) + ' ' +
+             d.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+    }catch(e){ return iso; }
+  }
+  function slug(s){ return String(s || 'rival').replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g,'') || 'rival'; }
+  function csvName(prefix, rival, date){
+    return prefix + '_' + slug(rival !== undefined ? rival : state.rival) + '_' + (date !== undefined ? date : state.matchDate) + '.csv';
+  }
+
+  function renderMatches(){
+    var f = els.matchesFeed;
+    if(!f) return;
+    f.innerHTML = '';
+    var matches = loadMatches();
+    if(!matches.length){
+      var e = document.createElement('div');
+      e.className = 'empty-hint';
+      e.textContent = 'Todavía no has guardado ningún partido anterior.';
+      f.appendChild(e);
+      return;
+    }
+    matches.forEach(function(m){
+      var item = document.createElement('div');
+      item.className = 'feed-item cbt';
+      var head = document.createElement('div');
+      head.className = 'feed-head';
+      head.innerHTML = '<span>' + fmtDateOnly(m.matchDate) + '</span><span>CBT ' + m.scoreCBT + ' - ' + m.scoreRival + ' ' + m.rival + '</span>';
+      item.appendChild(head);
+
+      var row = document.createElement('div');
+      row.className = 'btn-grid g4';
+      row.style.marginTop = '6px';
+      row.appendChild(btn('CSV poses.', 'btn-close', function(){
+        exportPossessionsCSV(m.possessions, csvName('posesiones', m.rival, m.matchDate), m.matchDate);
+      }));
+      row.appendChild(btn('CSV eventos', 'btn-close', function(){
+        exportEventsCSV(m.possessions, csvName('eventos', m.rival, m.matchDate), m.matchDate);
+      }));
+      row.appendChild(btn('CSV faltas', 'btn-close', function(){
+        exportAdminCSV(m.personalFouls || [], m.timeouts || [], csvName('faltas_tm', m.rival, m.matchDate), m.matchDate);
+      }));
+      var del = btn('Borrar', 'btn-close', function(){
+        if(confirm('¿Borrar este partido guardado (' + m.rival + ', ' + fmtSavedAt(m.savedAt) + ')? No se puede deshacer.')){
+          saveMatches(loadMatches().filter(function(x){ return x.id !== m.id; }));
+          renderMatches();
+        }
+      });
+      del.style.color = 'var(--bad)';
+      row.appendChild(del);
+      item.appendChild(row);
+      f.appendChild(item);
+    });
+  }
+
+  /* =======================================================================
+     Exportación
+     ======================================================================= */
+  function csvText(rows){
+    return rows.map(function(r){
+      return r.map(function(c){
+        var s = (c === null || c === undefined) ? '' : String(c);
+        if(s.indexOf(';') > -1 || s.indexOf('"') > -1 || s.indexOf('\n') > -1){
+          s = '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+      }).join(';');
+    }).join('\r\n');
+  }
+
+  /* En una PWA de iOS el enlace de descarga clásico no siempre abre nada.
+     Se intenta primero la hoja de compartir (Archivos, Mail, AirDrop...),
+     que es lo que funciona de forma fiable desde el móvil. */
+  function deliverFile(filename, text, mime){
+    var blob = new Blob(['﻿' + text], {type: (mime || 'text/csv') + ';charset=utf-8;'});
+    var file = null;
+    try{ file = new File([blob], filename, {type: blob.type}); }catch(e){}
+
+    if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+      navigator.share({files:[file], title: filename})
+        .then(function(){ toast('Archivo compartido'); })
+        .catch(function(){ downloadFallback(filename, blob, text); });
+      return;
+    }
+    downloadFallback(filename, blob, text);
+  }
+
+  function downloadFallback(filename, blob, text){
+    try{
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = filename; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      toast('Descargando ' + filename);
+    }catch(e){
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text)
+          .then(function(){ toast('No se pudo descargar: copiado al portapapeles'); })
+          .catch(function(){ toast('No se pudo exportar el archivo'); });
+      } else {
+        toast('No se pudo exportar el archivo');
+      }
+    }
+  }
+
+  function exportPossessionsCSV(possessions, filename, fecha){
+    fecha = fecha || '';
+    var rows = [['fecha','id','cuarto','equipo','resultado','puntos','2a_oportunidad','tras_perdida']];
+    possessions.forEach(function(p){
+      rows.push([fecha, p.id, p.quarter, p.team, p.result, p.points, p.hasORB ? 'si' : 'no', p.afterOppTurnover ? 'si' : 'no']);
+    });
+    deliverFile(filename, csvText(rows));
+  }
+
+  function exportEventsCSV(possessions, filename, fecha){
+    fecha = fecha || '';
+    var rows = [['fecha','posesion_id','cuarto','equipo','tipo','valor_resultado','modo','dorsal','tablero','jugadores_lucha']];
+    possessions.forEach(function(p){
+      p.events.forEach(function(e){
+        rows.push([
+          fecha, p.id, p.quarter, p.team, e.type,
+          e.resultado || (e.anotado !== undefined ? (e.anotado ? 'anotado' : 'fallado') : (e.tirosLibres || '')),
+          e.modo || '', e.dorsal || '', e.tablero || '', e.jugadoresLucha || ''
+        ]);
+      });
+    });
+    deliverFile(filename, csvText(rows));
+  }
+
+  function exportAdminCSV(personalFouls, timeouts, filename, fecha){
+    fecha = fecha || '';
+    var rows = [['fecha','tipo','equipo','cuarto','dorsal']];
+    personalFouls.forEach(function(f){ rows.push([fecha, 'falta_personal', f.team, f.quarter, f.dorsal || '']); });
+    timeouts.forEach(function(t){ rows.push([fecha, 'tiempo_muerto', t.team, t.quarter, '']); });
+    deliverFile(filename, csvText(rows));
+  }
+
+  /* =======================================================================
+     Copia de seguridad completa (JSON) e importación
+     ======================================================================= */
+  function renderBackup(){
+    var panel = els.backupPanel;
+    panel.innerHTML = '';
+
+    var t = document.createElement('div');
+    t.className = 'panel-title';
+    t.textContent = 'Copia completa';
+    panel.appendChild(t);
+
+    var g = document.createElement('div');
+    g.className = 'btn-grid';
+    g.appendChild(btn('Exportar copia de seguridad (JSON)<br><small>partido en curso + partidos guardados</small>', 'btn-neutral', function(){
+      var dump = {
+        app: 'posesiones-cbt', version: APP_VERSION, exportedAt: new Date().toISOString(),
+        state: state, matches: loadMatches()
+      };
+      deliverFile('copia_posesiones_cbt_' + todayISODate() + '.json', JSON.stringify(dump, null, 2), 'application/json');
+    }));
+    panel.appendChild(g);
+
+    var imp = document.createElement('div');
+    imp.style.marginTop = '8px';
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.style.display = 'none';
+    input.onchange = function(){
+      var file = input.files && input.files[0];
+      if(!file) return;
+      var reader = new FileReader();
+      reader.onload = function(){
+        try{
+          var data = JSON.parse(String(reader.result));
+          if(!data || data.app !== 'posesiones-cbt') throw new Error('formato');
+          if(!confirm('Importar esta copia SUSTITUYE el partido en curso y el archivo de partidos guardados. ¿Continuar?')) return;
+          if(data.matches) saveMatches(data.matches);
+          if(data.state){
+            Object.keys(state).forEach(function(k){ delete state[k]; });
+            Object.assign(state, data.state);
+            normalizeState();
+            undoStack = [];
+            syncInputsFromState();
+            recalcScore();
+            render();
+          }
+          renderMatches();
+          toast('Copia importada correctamente');
+        }catch(e){
+          alert('Ese archivo no es una copia válida de Posesiones CBT.');
+        }
+      };
+      reader.readAsText(file);
+      input.value = '';
+    };
+    var impBtn = btn('Importar copia de seguridad (JSON)', 'btn-close', function(){ input.click(); });
+    impBtn.style.width = '100%';
+    imp.appendChild(impBtn);
+    imp.appendChild(input);
+    panel.appendChild(imp);
+
+    var t2 = document.createElement('div');
+    t2.className = 'panel-title';
+    t2.style.marginTop = '18px';
+    t2.textContent = 'Estado de la app';
+    panel.appendChild(t2);
+
+    var info = document.createElement('div');
+    info.className = 'hint';
+    var standalone = isStandalone();
+    var bytes = 0;
+    try{ bytes = (localStorage.getItem(LS_STATE) || '').length; }catch(e){}
+    info.innerHTML =
+      'Versión de la app: <b>' + APP_VERSION + '</b><br>' +
+      'Instalada en la pantalla de inicio: <b>' + (standalone ? 'sí' : 'no — ábrela desde el icono') + '</b><br>' +
+      'Funciona sin conexión: <b>' + ('serviceWorker' in navigator ? (navigator.serviceWorker.controller ? 'sí' : 'preparándose') : 'no soportado') + '</b><br>' +
+      'Bloqueo de pantalla: <b>' + ('wakeLock' in navigator ? (wakeLockActive ? 'activo' : 'disponible') : 'no soportado en este navegador') + '</b><br>' +
+      'Almacenamiento persistente: <b>' + persistGranted + '</b><br>' +
+      'Tamaño del partido en curso: <b>' + Math.round(bytes/1024) + ' KB</b><br>' +
+      'Último guardado: <b>' + (lastSaveAt ? fmtClock(lastSaveAt) : '—') + '</b>';
+    panel.appendChild(info);
+
+    var upd = btn('Buscar actualización de la app', 'btn-close', function(){
+      if(!('serviceWorker' in navigator)){ toast('No soportado'); return; }
+      navigator.serviceWorker.getRegistration().then(function(reg){
+        if(!reg){ toast('Todavía no instalada'); return; }
+        reg.update().then(function(){ toast('Comprobado. Cierra y vuelve a abrir la app para aplicar cambios.'); })
+                    .catch(function(){ toast('Sin conexión ahora mismo'); });
+      });
+    });
+    upd.style.width = '100%'; upd.style.marginTop = '12px';
+    panel.appendChild(upd);
+  }
+
+  /* =======================================================================
+     Pantalla encendida (Wake Lock)
+     ======================================================================= */
+  var wakeLock = null, wakeLockActive = false;
+
+  function updateWakePill(){
+    if(!els.wakePill) return;
+    if(!('wakeLock' in navigator)){
+      els.wakePill.textContent = 'Pantalla: n/d';
+      els.wakePill.className = 'pill';
+      return;
+    }
+    if(state.ui.wake){
+      els.wakePill.textContent = wakeLockActive ? 'Pantalla ON' : 'Pantalla ON (esperando)';
+      els.wakePill.className = 'pill on';
+    } else {
+      els.wakePill.textContent = 'Pantalla: auto';
+      els.wakePill.className = 'pill';
+    }
+  }
+
+  function acquireWakeLock(){
+    if(!state.ui.wake || !('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+    if(wakeLock && !wakeLock.released) return;
+    navigator.wakeLock.request('screen').then(function(lock){
+      wakeLock = lock;
+      wakeLockActive = true;
+      updateWakePill();
+      lock.addEventListener('release', function(){
+        wakeLockActive = false;
+        updateWakePill();
+      });
+    }).catch(function(){
+      wakeLockActive = false;
+      updateWakePill();
+    });
+  }
+
+  function releaseWakeLock(){
+    wakeLockActive = false;
+    if(wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; }
+    updateWakePill();
+  }
+
+  els.wakePill.onclick = function(){
+    if(!('wakeLock' in navigator)){
+      toast('Este navegador no puede mantener la pantalla encendida. Sube el tiempo de bloqueo en Ajustes › Pantalla y brillo.', 5000);
+      return;
+    }
+    state.ui.wake = !state.ui.wake;
+    if(state.ui.wake){ acquireWakeLock(); toast('La pantalla se mantendrá encendida mientras la app esté abierta'); }
+    else { releaseWakeLock(); toast('La pantalla volverá a apagarse sola'); }
+    persistState();
+    updateWakePill();
+  };
+
+  /* =======================================================================
+     Ciclo de vida: lo que salvó el partido la próxima vez
+     ======================================================================= */
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'hidden'){
+      flushNow();
+    } else {
+      acquireWakeLock();
+      renderSaveBadge();
+    }
+  });
+  window.addEventListener('pagehide', flushNow);
+  window.addEventListener('blur', flushNow);
+  window.addEventListener('freeze', flushNow);
+  window.addEventListener('beforeunload', function(e){
+    flushNow();
+    if(hasAnyData()){
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+  });
+
+  var persistGranted = 'sin comprobar';
+  if(navigator.storage && navigator.storage.persist){
+    navigator.storage.persisted().then(function(already){
+      if(already){ persistGranted = 'concedido'; return; }
+      return navigator.storage.persist().then(function(ok){
+        persistGranted = ok ? 'concedido' : 'no concedido';
+      });
+    }).catch(function(){ persistGranted = 'no disponible'; });
+  } else {
+    persistGranted = 'no soportado';
+  }
+
+  function isStandalone(){
+    return !!(window.navigator.standalone ||
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches));
+  }
+
+  function renderInstallNote(){
+    if(isStandalone()){ els.installNote.style.display = 'none'; return; }
+    var dismissed = false;
+    try{ dismissed = localStorage.getItem('cbt_install_note_off') === '1'; }catch(e){}
+    if(dismissed){ els.installNote.style.display = 'none'; return; }
+
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    els.installNote.style.display = 'block';
+    els.installNote.innerHTML = isIOS
+      ? '<b>Instálala antes del partido.</b><br>Safari → botón Compartir → <b>Añadir a pantalla de inicio</b>. Ábrela siempre desde ese icono: así no se cierra al bloquear la pantalla y funciona sin cobertura.'
+      : '<b>Instálala como app.</b><br>Desde el menú del navegador: <b>Instalar aplicación</b> / <b>Añadir a pantalla de inicio</b>.';
+    var b = document.createElement('button');
+    b.textContent = 'No volver a mostrar';
+    b.onclick = function(){
+      try{ localStorage.setItem('cbt_install_note_off','1'); }catch(e){}
+      els.installNote.style.display = 'none';
+    };
+    els.installNote.appendChild(b);
+  }
+
+  /* Service worker: sin él la app no arranca offline. */
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('./sw.js').catch(function(){});
+    });
+    var reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      // Nunca recargamos solos: recargar en mitad de un partido sería peor que
+      // quedarse con la versión antigua. Sólo avisamos.
+      if(!reloaded){ reloaded = true; toast('Nueva versión lista. Se aplicará la próxima vez que abras la app.', 4000); }
+    });
+  }
+
+  /* =======================================================================
+     Entradas y toggles
+     ======================================================================= */
+  els.rivalInput.addEventListener('input', function(){
+    state.rival = els.rivalInput.value.trim();
+    els.nameRival.textContent = state.rival ? state.rival.toUpperCase().slice(0,14) : 'RIVAL';
+    persistState();
+  });
+  els.rivalInput.addEventListener('change', function(){ render(); });
+  els.matchDateInput.addEventListener('input', function(){
+    state.matchDate = els.matchDateInput.value || todayISODate();
+    persistState();
+  });
+
+  function wireToggle(key, panel, chev, onOpen){
+    return function(){
+      state.ui[key] = !state.ui[key];
+      panel.style.display = state.ui[key] ? 'block' : 'none';
+      chev.textContent = state.ui[key] ? '▲' : '▼';
+      if(state.ui[key] && onOpen) onOpen();
+      persistState();
+    };
+  }
+  els.statsToggle.onclick   = wireToggle('stats',   els.statsPanel,   els.statsChev,   renderStats);
+  els.feedToggle.onclick    = wireToggle('feed',    els.feedPanel,    els.feedChev,    renderFeed);
+  els.adminToggle.onclick   = wireToggle('admin',   els.adminPanel,   els.adminChev,   function(){ adminFoulCtx = null; renderAdmin(); });
+  els.matchesToggle.onclick = wireToggle('matches', els.matchesPanel, els.matchesChev, renderMatches);
+  els.backupToggle.onclick  = wireToggle('backup',  els.backupPanel,  els.backupChev,  renderBackup);
+
+  function applyUIState(){
+    var map = [['stats',els.statsPanel,els.statsChev,renderStats],
+               ['feed',els.feedPanel,els.feedChev,renderFeed],
+               ['admin',els.adminPanel,els.adminChev,renderAdmin],
+               ['matches',els.matchesPanel,els.matchesChev,renderMatches],
+               ['backup',els.backupPanel,els.backupChev,renderBackup]];
+    map.forEach(function(m){
+      var on = !!state.ui[m[0]];
+      m[1].style.display = on ? 'block' : 'none';
+      m[2].textContent = on ? '▲' : '▼';
+      if(on) m[3]();
+    });
+  }
+
+  document.getElementById('newMatchBtn').onclick = function(){
+    if(!hasAnyData()){
+      alert('Todavía no hay nada registrado en este partido, no hay nada que guardar.');
+      return;
+    }
+    if(confirm('¿Guardar el partido actual y empezar uno nuevo? El marcador, el rival, las posesiones, las faltas personales y los tiempos muertos quedarán archivados y podrás exportarlos luego desde "Partidos guardados".')){
+      archiveCurrentMatch();
+      startNewMatch();
+      renderMatches();
+      state.ui.matches = true;
+      els.matchesPanel.style.display = 'block';
+      els.matchesChev.textContent = '▲';
+      toast('Partido archivado. Listo para el siguiente.');
+    }
+  };
+
+  document.getElementById('resetBtn').onclick = function(){
+    if(confirm('¿Borrar todo el registro del partido SIN guardarlo? No se puede deshacer. Si quieres conservar los datos, usa antes "Guardar este partido y empezar uno nuevo".')){
+      startNewMatch();
+      toast('Partido borrado');
+    }
+  };
+
+  document.getElementById('exportPossBtn').onclick = function(){
+    exportPossessionsCSV(state.possessions, csvName('posesiones'), state.matchDate);
+  };
+  document.getElementById('exportEventsBtn').onclick = function(){
+    exportEventsCSV(state.possessions, csvName('eventos'), state.matchDate);
+  };
+  document.getElementById('undoBtn').onclick = undo;
+
+  /* =======================================================================
+     Arranque
+     ======================================================================= */
+  var from = loadState();
+  normalizeState();
+
+  // Una sola acción de deshacer sobrevive al cierre de la app.
+  try{
+    var prevRaw = localStorage.getItem(LS_PREV);
+    if(prevRaw){ var prevObj = JSON.parse(prevRaw); if(prevObj && typeof prevObj === 'object') undoStack.push(prevObj); }
+  }catch(e){}
+
+  syncInputsFromState();
+  recalcScore();
+  updateWakePill();
+  renderInstallNote();
+  applyUIState();
+  render();
+  acquireWakeLock();
+
+  if(from && (state.possessions.length || state.current)){
+    toast(from === 'backup'
+      ? 'Partido recuperado de la copia de seguridad interna'
+      : 'Partido en curso recuperado: ' + state.possessions.length + ' posesiones', 3800);
+  }
+
+  // Si localStorage vino vacío pero IndexedDB tiene algo, se rescata.
+  if(!from){
+    idbGet('state').then(function(json){
+      if(!json) return idbGet('backup');
+      return json;
+    }).then(function(json){
+      if(!json) return;
+      try{
+        var saved = JSON.parse(json);
+        if(!saved || !Array.isArray(saved.possessions) || !saved.possessions.length) return;
+        if(!confirm('Se ha encontrado un partido guardado en la copia interna del teléfono (' + saved.possessions.length + ' posesiones) que no estaba en la memoria rápida. ¿Recuperarlo?')) return;
+        Object.assign(state, saved);
+        normalizeState();
+        syncInputsFromState();
+        recalcScore();
+        applyUIState();
+        render();
+        toast('Partido recuperado de la copia interna');
+      }catch(e){}
+    });
+  }
+
+  // Latido de guardado: aunque no toques nada, se refresca la marca de tiempo
+  // y se recupera el bloqueo de pantalla si iOS lo soltó.
+  setInterval(function(){
+    if(document.visibilityState !== 'visible') return;
+    acquireWakeLock();
+    if(hasAnyData()) flushNow();
+    renderSaveBadge();
+  }, 30000);
+
+  } catch(fatalErr){
+    recoverUI();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "Posesiones CB Tomelloso",
+  "short_name": "Posesiones CBT",
+  "description": "Registro en vivo de partidos por posesiones del CB Tomelloso.",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen"],
+  "orientation": "portrait",
+  "background_color": "#15120e",
+  "theme_color": "#15120e",
+  "categories": ["sports", "productivity", "utilities"],
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
