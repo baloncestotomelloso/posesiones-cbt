@@ -252,7 +252,7 @@
 (function(){
   "use strict";
 
-  var APP_VERSION = '2.0.0';
+  var APP_VERSION = '2.0.1';
 
   /* =======================================================================
      Pantalla de emergencia: si cualquier cosa revienta, esto tiene que
@@ -1691,6 +1691,19 @@
   /* =======================================================================
      Ciclo de vida: lo que salvó el partido la próxima vez
      ======================================================================= */
+  /* iOS suele denegar el bloqueo de pantalla si se pide nada más cargar, sin que
+     el usuario haya tocado nada. Se reintenta en el primer toque, sea donde sea,
+     para no depender de que te acuerdes de pulsar el botón antes del partido. */
+  (function(){
+    function firstTouch(){
+      document.removeEventListener('pointerdown', firstTouch, true);
+      document.removeEventListener('touchstart', firstTouch, true);
+      acquireWakeLock();
+    }
+    document.addEventListener('pointerdown', firstTouch, true);
+    document.addEventListener('touchstart', firstTouch, true);
+  })();
+
   document.addEventListener('visibilitychange', function(){
     if(document.visibilityState === 'hidden'){
       flushNow();

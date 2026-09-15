@@ -4,7 +4,7 @@
    - Sirve desde caché al instante y actualiza en segundo plano (stale-while-revalidate).
    - Nunca deja que un fallo de red bloquee el arranque. */
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const CACHE = 'cbt-posesiones-' + VERSION;
 
 const ASSETS = [
@@ -56,12 +56,17 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
+  // Sin conexión no se intenta la red siquiera: el intento fallido hace que iOS
+  // saque su aviso de "Desactiva el modo Avión" por encima de la app.
+  const offline = (self.navigator && self.navigator.onLine === false);
+
   // Cualquier navegación (arranque de la app, recarga, vuelta desde segundo plano)
   // se resuelve con el index cacheado. Sin red, arranca igual.
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
       const cached = (await cache.match('./index.html')) || (await cache.match('./'));
+      if (cached && offline) return cached;
       const fresh = fetch(req).then((res) => {
         if (res && res.ok) cache.put('./index.html', res.clone());
         return res;
@@ -77,6 +82,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const cached = await cache.match(req);
+    if (cached && offline) return cached;
     const fresh = fetch(req).then((res) => {
       if (res && res.ok) cache.put(req, res.clone());
       return res;
