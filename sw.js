@@ -4,7 +4,7 @@
    - Sirve desde caché al instante y actualiza en segundo plano (stale-while-revalidate).
    - Nunca deja que un fallo de red bloquee el arranque. */
 
-const VERSION = '1.0.2';
+const VERSION = '1.0.6';
 const CACHE = 'cbt-posesiones-' + VERSION;
 
 const ASSETS = [

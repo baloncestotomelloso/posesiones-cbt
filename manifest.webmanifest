@@ -8,7 +8,7 @@
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "fullscreen"],
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#15120e",
   "theme_color": "#15120e",
   "categories": ["sports", "productivity", "utilities"],

@@ -156,8 +156,53 @@
     border-radius:10px;padding:11px 4px;font-size:11px;font-weight:700;}
   .footer button.undo{color:var(--gold);border-color:var(--gold);}
 
+  /* Informe de faltas personales, a dos columnas */
+  .foul-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+  .foul-col h4{font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+    font-weight:700;margin:0 0 6px;}
+  .foul-col.cbt h4{color:var(--cbt);}
+  .foul-col.rival h4{color:var(--rival);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .foul-row{display:flex;justify-content:space-between;align-items:center;gap:6px;
+    background:var(--surface2);border:1px solid var(--line);border-left-width:3px;
+    border-radius:0 6px 6px 0;padding:6px 8px;margin-bottom:4px;font-size:13px;}
+  .foul-col.cbt .foul-row{border-left-color:var(--cbt);}
+  .foul-col.rival .foul-row{border-left-color:var(--rival);}
+  .foul-row b{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .foul-row.cargado{border-color:var(--bad);}
+  .foul-row.cargado b{color:var(--bad);}
+  .foul-empty{color:var(--muted);font-size:12px;padding:6px 2px;}
+
   .empty-hint{color:var(--muted);font-size:12px;text-align:center;padding:14px 6px;}
   .hint{color:var(--muted);font-size:11px;line-height:1.5;margin-top:8px;}
+
+  /* ---------- Tablet ----------
+     Los cortes miran ancho Y alto. Solo con el ancho, un iPhone girado (932×430)
+     entraría en la maqueta de tablet y quedaría inservible. Un iPad cumple los
+     dos en vertical (768×1024) y en horizontal (1024×768). */
+  @media (min-width:640px) and (min-height:600px){
+    #app{max-width:680px;}
+    .footer{max-width:680px;}
+    .team-score{font-size:44px;}
+    .btn{font-size:15px;padding:16px 10px;}
+    .btn-open-cbt,.btn-open-rival{font-size:19px;padding:26px 12px;}
+    .keypad button{padding:15px 0;font-size:17px;}
+    .quarter-select button{font-size:12px;padding:6px 9px;}
+    .stats-toggle{font-size:14px;padding:13px;}
+    table.stats{font-size:13px;}
+    .feed{max-height:52vh;}
+    .footer button{font-size:12px;padding:13px 4px;}
+  }
+
+  /* Dos columnas: a la izquierda lo que se pulsa, a la derecha lo que se lee.
+     Así el panel de decisión queda a la vista sin tapar los botones. */
+  @media (min-width:900px) and (min-height:600px){
+    #app{max-width:1040px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+      gap:0 16px;align-items:start;}
+    .statusbar,.install-note{grid-column:1 / -1;}
+    .col-main{position:sticky;top:calc(6px + env(safe-area-inset-top));}
+    .footer{max-width:1040px;}
+    .feed{max-height:58vh;}
+  }
 
   /* Manual superpuesto: se lee sin salir de la app, así el partido en curso
      ni se descarga ni se recarga. */
@@ -189,6 +234,11 @@
 
   <div class="install-note" id="installNote" style="display:none;"></div>
 
+  <!-- En móvil las dos columnas se apilan y queda igual que siempre. En tablet
+       se ponen una al lado de la otra: a la izquierda lo que se pulsa, a la
+       derecha lo que se lee. -->
+  <div class="col-main">
+
   <div class="scoreboard">
     <div class="team-block cbt">
       <div class="team-name" id="nameCBT">CBT</div>
@@ -216,6 +266,10 @@
   <div class="poss-banner" id="possBanner"></div>
 
   <div class="panel" id="actionPanel"></div>
+
+  </div><!-- /col-main -->
+
+  <div class="col-side">
 
   <button class="stats-toggle" id="statsToggle">
     <span>Panel de decisión en vivo</span><span class="chev" id="statsChev">▼</span>
@@ -254,6 +308,8 @@
     <span>Manual de uso</span><span class="chev">›</span>
   </button>
 
+  </div><!-- /col-side -->
+
 </div>
 
 <div id="helpOverlay" hidden>
@@ -276,7 +332,7 @@
 (function(){
   "use strict";
 
-  var APP_VERSION = '2.1.0';
+  var APP_VERSION = '2.4.0';
 
   /* =======================================================================
      Pantalla de emergencia: si cualquier cosa revienta, esto tiene que
@@ -547,8 +603,11 @@
     if(state.current && state.current.team !== 'CBT' && state.current.team !== 'RIVAL') state.current = null;
     if(state.current && typeof state.current.carry !== 'number') state.current.carry = 0;
 
-    var valid = ['afterMake','freeThrows','rebound','dorsalShot','dorsalTurnover','foulPicker'];
+    var valid = ['afterMake','freeThrows','rebound','dorsalShot','dorsalTurnover','foulPicker',
+                 'dorsalFoul','dorsalOffFoul'];
     if(valid.indexOf(state.pending) === -1) state.pending = null;
+    if(state.foulCtx && typeof state.foulCtx !== 'object') state.foulCtx = null;
+    if(state.pending === 'dorsalFoul' && !state.foulCtx) state.pending = null;
 
     if(typeof state.rival !== 'string') state.rival = '';
     if(typeof state.quarter !== 'number' || state.quarter < 1 || state.quarter > 5) state.quarter = 1;
@@ -757,10 +816,31 @@
     persistState();
   }
 
-  /* --- Falta recibida --- */
+  /* --- Falta recibida ---
+     Se pide el dorsal del que la comete (del equipo que defiende) y con ese
+     mismo gesto queda apuntada la falta personal: un solo tecleo para los dos
+     registros. */
   function foulDrawnAction(n){
     pushUndo();
-    addEvent({type:'falta', tirosLibres:n});
+    state.foulCtx = {tirosLibres: n};
+    state.pending = 'dorsalFoul';
+    render();
+  }
+
+  function registerPersonalFoul(team, dorsal, origen){
+    state.personalFouls.push({
+      id: Date.now() + Math.random(),
+      team: team, dorsal: dorsal || null,
+      quarter: state.quarter, origen: origen
+    });
+  }
+
+  function finalizeFoulDrawn(dorsal){
+    var n = (state.foulCtx && state.foulCtx.tirosLibres) || 0;
+    state.foulCtx = null;
+    addEvent({type:'falta', tirosLibres:n, dorsal: dorsal || null});
+    // La comete el equipo que defiende, o sea el contrario al de la posesión.
+    registerPersonalFoul(otherTeam(state.current.team), dorsal, 'posesion');
     if(n === 0){
       state.pending = null;
       render();
@@ -769,6 +849,25 @@
     state.ft = {total:n, made:[], bonus:false};
     state.pending = 'freeThrows';
     render();
+  }
+
+  /* --- Falta en ataque ---
+     Es una pérdida y además una falta personal del atacante. Va en su propio
+     botón para no añadir pasos a las pérdidas normales. */
+  function offensiveFoulAction(){
+    pushUndo();
+    state.pending = 'dorsalOffFoul';
+    render();
+  }
+
+  function finalizeOffensiveFoul(dorsal){
+    var team = state.current.team;
+    addEvent({type:'perdida', dorsal: dorsal || null, motivo:'faltaEnAtaque'});
+    registerPersonalFoul(team, dorsal, 'faltaEnAtaque');
+    var pts = carry();
+    closePossession('perdida', pts);
+    state.afterTurnoverTeam = otherTeam(team);
+    persistState();
   }
   function ftResult(made){
     pushUndo();
@@ -973,6 +1072,20 @@
       return;
     }
 
+    if(state.pending === 'dorsalOffFoul'){
+      renderDorsalKeypad(panel, 'Falta en ataque. ¿Quién la comete?', finalizeOffensiveFoul);
+      return;
+    }
+
+    if(state.pending === 'dorsalFoul' && state.foulCtx){
+      var nTL = state.foulCtx.tirosLibres;
+      var comete = state.current.team === 'CBT' ? rivalName() : 'CBT';
+      renderDorsalKeypad(panel,
+        'Falta de ' + comete + ' (' + (nTL > 0 ? nTL + ' TL' : 'sin TL') + '). ¿Qué dorsal la comete?',
+        finalizeFoulDrawn);
+      return;
+    }
+
     if(state.pending === 'afterMake'){
       var t1 = document.createElement('div');
       t1.className = 'panel-title';
@@ -1100,10 +1213,11 @@
     panel.appendChild(gShots);
 
     var gOther = document.createElement('div');
-    gOther.className = 'btn-grid g2';
+    gOther.className = 'btn-grid g3';
     gOther.style.marginTop = '8px';
     gOther.appendChild(btn('Pérdida', 'btn-neutral', turnoverAction));
-    gOther.appendChild(btn('Falta recibida', 'btn-warn', function(){ pushUndo(); state.pending = 'foulPicker'; render(); }));
+    gOther.appendChild(btn('Falta en<br>ataque', 'btn-neutral', offensiveFoulAction));
+    gOther.appendChild(btn('Falta<br>recibida', 'btn-warn', function(){ pushUndo(); state.pending = 'foulPicker'; render(); }));
     panel.appendChild(gOther);
 
     var closeRow = document.createElement('div');
@@ -1174,9 +1288,19 @@
       var den = own + s[otherTeam(team)].drb;
       return den > 0 ? Math.round((own/den)*1000)/10 : 0;
     }
+    function possCount(team){
+      return state.possessions.filter(function(p){ return p.team === team; }).length;
+    }
     function tovPct(team){
-      var poss = state.possessions.filter(function(p){ return p.team === team; }).length;
+      var poss = possCount(team);
       return poss > 0 ? Math.round((s[team].tov/poss)*1000)/10 : 0;
+    }
+    /* Puntos por 100 posesiones. Aquí las posesiones son las reales, contadas
+       una a una, no las estimadas con la fórmula de Oliver. El OER del rival es
+       nuestro DER: las posesiones que defendemos son las que él ataca. */
+    function oer(team){
+      var poss = possCount(team);
+      return poss > 0 ? Math.round((s[team].pts/poss)*1000)/10 : 0;
     }
     function eFG(team){
       var st = s[team], fga = st.t2a + st.t3a, fgm = st.t2i + st.t3i;
@@ -1194,6 +1318,11 @@
     html += rowStat('TOV%', tovPct('CBT') + '%', tovPct('RIVAL') + '%');
     html += rowStat('ORB%', orbPct('CBT') + '%', orbPct('RIVAL') + '%');
     html += rowStat('FT Rate', ftRate('CBT') + '%', ftRate('RIVAL') + '%');
+    html += '</table>';
+
+    html += '<div class="stats-section-title">Eficiencia por 100 posesiones</div>';
+    html += '<table class="stats"><tr><th></th><th>CBT</th><th>' + rv + '</th></tr>';
+    html += rowStat('OER', oer('CBT'), oer('RIVAL'));
     html += '</table>';
 
     html += '<div class="stats-section-title">Tiro</div>';
@@ -1216,7 +1345,7 @@
     html += rowStat('Tras pérdida rival (' + s.CBT.poTovCount + ')', s.CBT.poTov, '—');
     html += rowStat('Tras pérdida propia (' + s.RIVAL.poTovCount + ')', '—', s.RIVAL.poTov);
     html += rowStat('Pérdidas', s.CBT.tov, s.RIVAL.tov);
-    html += rowStat('Faltas cometidas', s.CBT.fouls, s.RIVAL.fouls);
+    html += rowStat('Faltas cometidas en posesión', s.CBT.fouls, s.RIVAL.fouls);
     html += '</table>';
 
     var pfCBT = state.personalFouls.filter(function(f){ return f.team === 'CBT'; }).length;
@@ -1245,8 +1374,14 @@
   function eventToText(e){
     if(e.type === 'tiro') return 'Tiro de ' + e.valor + (e.dorsal ? ' (#' + e.dorsal + ')' : '') + ' ' + (e.resultado === 'anotado' ? 'anotado' : 'fallado');
     if(e.type === 'tiroLibre') return 'TL ' + (e.anotado ? 'anotado' : 'fallado');
-    if(e.type === 'falta') return e.tirosLibres > 0 ? ('Falta recibida (' + e.tirosLibres + ' TL)') : 'Falta recibida (sin TL)';
-    if(e.type === 'perdida') return 'Pérdida' + (e.dorsal ? ' (#' + e.dorsal + ')' : '');
+    if(e.type === 'falta'){
+      return 'Falta recibida' + (e.dorsal ? ' de #' + e.dorsal : '') +
+             (e.tirosLibres > 0 ? ' (' + e.tirosLibres + ' TL)' : ' (sin TL)');
+    }
+    if(e.type === 'perdida'){
+      var base = e.motivo === 'faltaEnAtaque' ? 'Falta en ataque' : 'Pérdida';
+      return base + (e.dorsal ? ' (#' + e.dorsal + ')' : '');
+    }
     if(e.type === 'rebote'){
       if(e.posesion === 'defensivo') return 'Rebote defensivo';
       var base = e.modo === 'equipo' ? 'Rebote ofensivo de EQUIPO' : 'Rebote ofensivo' + (e.dorsal ? ' (#' + e.dorsal + ')' : '');
@@ -1316,10 +1451,10 @@
 
     if(adminFoulCtx){
       renderDorsalKeypad(panel,
-        'Falta personal de ' + (adminFoulCtx.team === 'CBT' ? 'CBT' : rivalName()) + '. ¿Qué dorsal?',
+        'Falta suelta de ' + (adminFoulCtx.team === 'CBT' ? 'CBT' : rivalName()) + '. ¿Qué dorsal?',
         function(d){
           pushUndo();
-          state.personalFouls.push({id: Date.now() + Math.random(), team: adminFoulCtx.team, dorsal: d, quarter: state.quarter});
+          registerPersonalFoul(adminFoulCtx.team, d, 'manual');
           adminFoulCtx = null;
           persistState();
           renderAdmin();
@@ -1327,42 +1462,71 @@
         },
         renderAdmin);
     } else {
+      var aviso = document.createElement('div');
+      aviso.className = 'hint';
+      aviso.style.marginTop = '0';
+      aviso.style.marginBottom = '10px';
+      aviso.textContent = 'Las faltas recibidas y las faltas en ataque ya se apuntan solas desde el registro de posesiones. Usa estos botones solo para lo que no se ve ahí: técnicas, faltas fuera de posesión y faltas al banquillo. Si la apuntas aquí además de en la posesión, contará dos veces.';
+      panel.appendChild(aviso);
+
       var gf = document.createElement('div');
       gf.className = 'btn-grid g2';
-      gf.appendChild(btn('Falta personal<br>CBT', 'btn-neutral', function(){ adminFoulCtx = {team:'CBT'}; state._dorsalBuffer = ''; renderAdmin(); }));
-      gf.appendChild(btn('Falta personal<br>' + rivalName(), 'btn-neutral', function(){ adminFoulCtx = {team:'RIVAL'}; state._dorsalBuffer = ''; renderAdmin(); }));
+      gf.appendChild(btn('Falta suelta<br>CBT<small>técnica / fuera de posesión</small>', 'btn-neutral', function(){ adminFoulCtx = {team:'CBT'}; state._dorsalBuffer = ''; renderAdmin(); }));
+      gf.appendChild(btn('Falta suelta<br>' + rivalName() + '<small>técnica / fuera de posesión</small>', 'btn-neutral', function(){ adminFoulCtx = {team:'RIVAL'}; state._dorsalBuffer = ''; renderAdmin(); }));
       panel.appendChild(gf);
 
-      var counts = {};
+      /* Informe a dos columnas: los nuestros a la izquierda, los suyos a la
+         derecha, cada lado de más faltas a menos. En un empate manda el dorsal
+         más bajo, para que el orden no baile entre repintados. */
+      var counts = {CBT:{}, RIVAL:{}};
       state.personalFouls.forEach(function(f){
-        var key = f.team + '#' + (f.dorsal || '?');
-        counts[key] = counts[key] || {team:f.team, dorsal:f.dorsal, n:0};
-        counts[key].n++;
+        var t = f.team === 'CBT' ? 'CBT' : 'RIVAL';
+        var key = f.dorsal || '?';
+        counts[t][key] = (counts[t][key] || 0) + 1;
       });
-      var rows = Object.keys(counts).map(function(k){ return counts[k]; })
-        .sort(function(a,b){ return b.n - a.n; });
-
-      var sum = document.createElement('div');
-      sum.style.marginTop = '10px';
-      if(!rows.length){
-        var eh = document.createElement('div');
-        eh.className = 'empty-hint';
-        eh.textContent = 'Todavía no hay faltas personales registradas.';
-        sum.appendChild(eh);
-      } else {
-        rows.forEach(function(r){
-          var row = document.createElement('div');
-          row.className = 'feed-item ' + (r.team === 'CBT' ? 'cbt' : 'rival');
-          var five = r.n >= 5;
-          row.innerHTML = '<div class="feed-head"><span>' + (r.team === 'CBT' ? 'CBT' : rivalName()) + ' · #' + (r.dorsal || 'sin identificar') + '</span>' +
-            '<span style="color:' + (five ? 'var(--bad)' : 'inherit') + ';font-weight:800;">' + r.n + ' ' + (five ? '⚠️' : '') + '</span></div>';
-          sum.appendChild(row);
-        });
+      function filasDe(team){
+        return Object.keys(counts[team]).map(function(k){ return {dorsal:k, n:counts[team][k]}; })
+          .sort(function(a, b){
+            return b.n - a.n ||
+              String(a.dorsal).localeCompare(String(b.dorsal), 'es', {numeric:true});
+          });
       }
-      panel.appendChild(sum);
 
-      if(state.personalFouls.length){
-        var uf = btn('Deshacer última falta personal', 'btn-close', function(){
+      var cols = document.createElement('div');
+      cols.className = 'foul-cols';
+      [['CBT','cbt'], ['RIVAL','rival']].forEach(function(par){
+        var team = par[0];
+        var col = document.createElement('div');
+        col.className = 'foul-col ' + par[1];
+        var filas = filasDe(team);
+        var total = filas.reduce(function(a, r){ return a + r.n; }, 0);
+
+        var h = document.createElement('h4');
+        h.textContent = (team === 'CBT' ? 'CBT' : rivalName()) + (total ? ' · ' + total : '');
+        col.appendChild(h);
+
+        if(!filas.length){
+          var vacio = document.createElement('div');
+          vacio.className = 'foul-empty';
+          vacio.textContent = 'Sin faltas';
+          col.appendChild(vacio);
+        } else {
+          filas.forEach(function(r){
+            var cargado = r.n >= 5;
+            var row = document.createElement('div');
+            row.className = 'foul-row' + (cargado ? ' cargado' : '');
+            row.innerHTML = '<span>' + (r.dorsal === '?' ? 'sin ident.' : '#' + r.dorsal) + '</span>' +
+              '<b>' + r.n + (cargado ? ' ⚠️' : '') + '</b>';
+            col.appendChild(row);
+          });
+        }
+        cols.appendChild(col);
+      });
+      panel.appendChild(cols);
+
+      var ultima = state.personalFouls[state.personalFouls.length - 1];
+      if(ultima && ultima.origen === 'manual'){
+        var uf = btn('Deshacer última falta suelta', 'btn-close', function(){
           pushUndo();
           state.personalFouls.pop();
           persistState();
@@ -1371,6 +1535,12 @@
         });
         uf.style.width = '100%'; uf.style.marginTop = '8px';
         panel.appendChild(uf);
+      } else if(ultima){
+        // Quitarla aquí dejaría descuadrada la posesión que la generó.
+        var nota = document.createElement('div');
+        nota.className = 'hint';
+        nota.textContent = 'La última falta viene del registro de posesiones. Para quitarla usa el botón Deshacer de abajo, que revierte las dos cosas a la vez.';
+        panel.appendChild(nota);
       }
     }
 
@@ -1411,6 +1581,7 @@
     }
 
     var exp = btn('CSV faltas y tiempos muertos', 'btn-neutral', function(){
+      if(avisarSiVacio(state.personalFouls.length + state.timeouts.length > 0)) return;
       exportAdminCSV(state.personalFouls, state.timeouts, csvName('faltas_tm'), state.matchDate);
     });
     exp.style.width = '100%'; exp.style.marginTop = '16px';
@@ -1554,9 +1725,9 @@
 
   function exportAdminCSV(personalFouls, timeouts, filename, fecha){
     fecha = fecha || '';
-    var rows = [['fecha','tipo','equipo','cuarto','dorsal']];
-    personalFouls.forEach(function(f){ rows.push([fecha, 'falta_personal', f.team, f.quarter, f.dorsal || '']); });
-    timeouts.forEach(function(t){ rows.push([fecha, 'tiempo_muerto', t.team, t.quarter, '']); });
+    var rows = [['fecha','tipo','equipo','cuarto','dorsal','origen']];
+    personalFouls.forEach(function(f){ rows.push([fecha, 'falta_personal', f.team, f.quarter, f.dorsal || '', f.origen || 'manual']); });
+    timeouts.forEach(function(t){ rows.push([fecha, 'tiempo_muerto', t.team, t.quarter, '', '']); });
     deliverFile(filename, csvText(rows));
   }
 
@@ -1866,10 +2037,31 @@
     }
   };
 
+  /* Tras archivar un partido, el registro en curso queda vacío y estos botones
+     sacarían un CSV con solo la fila de cabecera. En vez de eso se avisa y se
+     abre la lista de partidos archivados, que es donde están los datos. */
+  function avisarSiVacio(hayDatos){
+    if(hayDatos) return false;
+    if(loadMatches().length){
+      toast('Este partido está vacío. Los partidos ya archivados se exportan desde "Partidos guardados".', 5200);
+      state.ui.matches = true;
+      els.matchesPanel.style.display = 'block';
+      els.matchesChev.textContent = '▲';
+      renderMatches();
+      try{ els.matchesToggle.scrollIntoView({block:'center'}); }catch(e){}
+      persistState();
+    } else {
+      toast('Todavía no hay nada registrado en este partido.', 3200);
+    }
+    return true;
+  }
+
   document.getElementById('exportPossBtn').onclick = function(){
+    if(avisarSiVacio(state.possessions.length > 0)) return;
     exportPossessionsCSV(state.possessions, csvName('posesiones'), state.matchDate);
   };
   document.getElementById('exportEventsBtn').onclick = function(){
+    if(avisarSiVacio(state.possessions.length > 0)) return;
     exportEventsCSV(state.possessions, csvName('eventos'), state.matchDate);
   };
   document.getElementById('undoBtn').onclick = undo;

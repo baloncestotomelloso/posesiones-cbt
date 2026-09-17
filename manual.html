@@ -238,19 +238,26 @@
 
     <div class="recipe">
       <div class="recipe-head"><h3>Falta con dos tiros libres, mete los dos</h3><span class="outcome out-close">Cierra</span></div>
-      <ol class="chain"><li><span class="k k-warn">Falta recibida</span></li><li><span class="k k-warn">2</span></li><li><span class="k k-make">ANOTADO</span></li><li><span class="k k-make">ANOTADO</span></li></ol>
+      <ol class="chain"><li><span class="k k-warn">Falta recibida</span></li><li><span class="k k-warn">2</span></li><li><span class="k">dorsal del que la comete</span><span class="k">OK</span></li><li><span class="k k-make">ANOTADO</span></li><li><span class="k k-make">ANOTADO</span></li></ol>
+      <small class="note">El dorsal que se pide es el <strong>del rival que hace la falta</strong>, no el de quien la recibe. Con ese tecleo la falta personal queda apuntada sola: no hay que ir luego a <em>Datos administrativos</em>.</small>
     </div>
 
     <div class="recipe">
       <div class="recipe-head"><h3>Dos tiros libres, mete el primero y falla el segundo</h3><span class="outcome out-close">Cierra</span></div>
-      <ol class="chain"><li><span class="k k-warn">Falta recibida</span></li><li><span class="k k-warn">2</span></li><li><span class="k k-make">ANOTADO</span></li><li><span class="k k-miss">FALLADO</span></li><li><span class="k k-miss">Rebote defensivo</span></li></ol>
+      <ol class="chain"><li><span class="k k-warn">Falta recibida</span></li><li><span class="k k-warn">2</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li><li><span class="k k-make">ANOTADO</span></li><li><span class="k k-miss">FALLADO</span></li><li><span class="k k-miss">Rebote defensivo</span></li></ol>
       <small class="note">Un punto para la posesión. Si el rebote lo cogemos nosotros, la posesión sigue abierta con ese punto guardado.</small>
     </div>
 
     <div class="recipe">
       <div class="recipe-head"><h3>Falta que no da tiros libres</h3><span class="outcome out-open">Sigue</span></div>
-      <ol class="chain"><li><span class="k k-warn">Falta recibida</span></li><li><span class="k">Falta sin tiros libres</span></li></ol>
-      <small class="note">Personal en ataque sin bonus, o antideportiva sin tiros. Queda registrada como falta cometida del rival y la posesión continúa igual.</small>
+      <ol class="chain"><li><span class="k k-warn">Falta recibida</span></li><li><span class="k">Falta sin tiros libres</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li></ol>
+      <small class="note">Personal defensiva sin bonus, o antideportiva sin tiros. Queda apuntada como falta personal del rival y la posesión continúa igual.</small>
+    </div>
+
+    <div class="recipe">
+      <div class="recipe-head"><h3>Falta en ataque</h3><span class="outcome out-close">Cierra</span></div>
+      <ol class="chain"><li><span class="k">Falta en ataque</span></li><li><span class="k">dorsal</span><span class="k">OK</span></li></ol>
+      <small class="note">Botón propio, al lado de <span class="k">Pérdida</span>. Cuenta como pérdida para el TOV% <strong>y</strong> como falta personal del atacante, con un solo tecleo. La siguiente posesión del rival queda marcada como «tras pérdida».</small>
     </div>
 
     <div class="recipe">
@@ -306,8 +313,10 @@
     <h2>Faltas personales y tiempos muertos</h2>
     <p class="sec-lede">Van en <em>Datos administrativos</em>, aparte del registro de posesiones, porque responden a otra pregunta: quién está cargado y cuánto queda por gastar.</p>
     <h3>Faltas personales</h3>
-    <p>Pulsa <span class="k">Falta personal CBT</span> o la del rival, teclea el dorsal y confirma con <span class="k">OK</span>. El resumen se agrupa por jugador, y <strong>al llegar a cinco aparece un aviso rojo</strong> junto al dorsal.</p>
-    <small class="note">Esto es independiente de la <span class="k k-warn">Falta recibida</span> del registro de posesiones: aquella es la falta que nos hacen dentro de una posesión concreta; esta es el recuento de personales de cada jugador, que es lo que necesitas para avisar al banquillo.</small>
+    <p><strong>La mayoría se apuntan solas.</strong> Cada <span class="k k-warn">Falta recibida</span> y cada <span class="k">Falta en ataque</span> del registro de posesiones te pide el dorsal del que la comete y suma la personal automáticamente. No hay que teclearla dos veces.</p>
+    <p>El resumen se agrupa por jugador y ordena por número de faltas, y <strong>al llegar a cinco aparece un aviso rojo</strong> junto al dorsal. Eso es lo que necesitas para avisar al banquillo.</p>
+    <p>Los botones <span class="k">Falta suelta</span> de este panel son solo para lo que el registro de posesiones no ve: <strong>técnicas, faltas fuera de posesión y faltas al banquillo</strong>.</p>
+    <small class="note">Si apuntas aquí una falta que ya registraste en la posesión, contará dos veces. Y para deshacer una falta que vino de una posesión, usa el botón <span class="k k-warn">Deshacer</span> de abajo: revierte la falta y la posesión a la vez.</small>
     <h3 style="margin-top:24px;">Tiempos muertos</h3>
     <p>Un toque en <span class="k k-warn">Tiempo muerto CBT</span> o en el del rival. Debajo tienes el recuento de los dos equipos. Los dos registros tienen su propio botón de deshacer dentro del panel, y su propio CSV.</p>
   </section>
@@ -321,6 +330,7 @@
       <div><dt>TOV%</dt><dd>Pérdidas por posesión propia. Aquí es un dato real, contado posesión a posesión, no la fórmula estimada del acta.<span class="formula">pérdidas ÷ posesiones del equipo</span></dd></div>
       <div><dt>ORB%</dt><dd>Qué parte de nuestros rechaces capturamos. Incluye los rebotes ofensivos de equipo.<span class="formula">ROf propios ÷ (ROf propios + RDef del rival)</span></dd></div>
       <div><dt>FT Rate</dt><dd>Cuánto pisamos la línea en relación a lo que tiramos de campo.<span class="formula">TL intentados ÷ TC intentados</span></dd></div>
+      <div><dt>OER</dt><dd>Puntos por cada 100 posesiones propias. El del rival es tu DER, porque las posesiones que defiendes son las que él ataca.<span class="formula">puntos ÷ posesiones del equipo × 100</span>Aquí las posesiones son las reales, contadas una a una, no las estimadas con la fórmula habitual. Tu OER es el de verdad.</dd></div>
       <div><dt>Puntos de 2ª oportunidad</dt><dd>Suma de los puntos de <em>todas</em> las posesiones que tuvieron al menos un rebote ofensivo. Más fiel que el dato oficial, que solo cuenta lo anotado inmediatamente después del rebote.</dd></div>
       <div><dt>Puntos tras pérdida</dt><dd>Puntos de la posesión inmediatamente siguiente a una pérdida del rival. El número entre paréntesis es cuántas veces ha pasado, que es lo que te dice si el dato tiene peso o es anecdótico.</dd></div>
     </dl>
@@ -346,9 +356,10 @@
     <p class="sec-lede">Primero exportar, después archivar. En ese orden.</p>
     <ol class="steps">
       <li><div><h3>Exporta los CSV</h3><p><span class="k">CSV posesiones</span> y <span class="k">CSV eventos</span> están abajo; el de faltas y tiempos muertos, dentro de <em>Datos administrativos</em>.</p>
-        <small class="note">Se abre la hoja de compartir de iOS: mándatelos a Archivos, a Mail o por AirDrop al ordenador.</small></div></li>
+        <small class="note">Se abre la hoja de compartir de iOS. Para llevarlos a un PC con Windows: <strong>Mail</strong> a tu propia dirección (lo más simple), o guardarlos en <strong>OneDrive</strong> para que aparezcan solos en el explorador. AirDrop no vale: solo funciona entre dispositivos Apple.</small></div></li>
       <li><div><h3>Guarda una copia completa</h3><p>En <em>Copia de seguridad y datos</em>, <span class="k">Exportar copia de seguridad (JSON)</span>. Lleva el partido en curso y todos los archivados, y se puede volver a importar.</p></div></li>
-      <li><div><h3>Archiva y prepara el siguiente</h3><p>En <em>Partidos guardados</em>, <span class="k">Guardar este partido y empezar uno nuevo</span>. Queda guardado con marcador, fecha y rival, y sigue exportable desde esa lista.</p></div></li>
+      <li><div><h3>Archiva y prepara el siguiente</h3><p>En <em>Partidos guardados</em>, <span class="k">Guardar este partido y empezar uno nuevo</span>. Queda guardado con marcador, fecha y rival.</p>
+        <small class="note">Después de archivar, los botones de abajo ya se refieren al partido nuevo, que está vacío. Cada partido archivado tiene sus propios botones de exportación dentro de <em>Partidos guardados</em>, y se pueden usar semanas después.</small></div></li>
     </ol>
 
     <h3 style="margin-top:28px;">Qué lleva cada CSV</h3>
